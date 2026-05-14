@@ -1,0 +1,45 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.code-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+.venv/
+backend/.venv/
+
+# Logs / runtime
+*.log
+log/
+logs/
+*.pid
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Home Assistant runtime data (contains secrets/tokens)
+config/
+homeassistant/
+
+# Build / artifacts
+build/
+dist/
+*.egg-info/
+*.tar.gz
+*.zip
+
+# Node
+node_modules/
