@@ -52,7 +52,7 @@ Layer rule:
 
 ## Configure environment
 
-> If you containerize this backend, keep `.dockerignore` present at repo root so secrets (`.env`, `config/`) and local virtualenv files are not sent into Docker build context.
+> If you containerize this backend from the repository root, keep `.dockerignore` present so secrets (`.env`, `config/`) and local virtualenv files are not sent into Docker build context. If you build with `context: ./backend`, keep `backend/.dockerignore` present too; Docker only reads the ignore file inside the selected build context.
 
 
 Create/edit `backend/.env`:

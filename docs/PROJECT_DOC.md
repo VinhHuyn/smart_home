@@ -42,7 +42,7 @@ Secondary paths remain available for debugging and compatibility:
 
 - Protected control endpoints (`/devices`, `/services`, `/commands`, `/mock/*`) require `X-API-Key` matching `SMART_HOME_API_KEY`.
 - Diagnostic endpoints remain open: `GET /` and `GET /ha/health`.
-- A root `.dockerignore` is now required to keep secrets/runtime files (`.env*`, `config/`, `homeassistant/`, virtualenvs, logs) out of Docker build context.
+- Docker ignore files are required at each build context boundary: root `.dockerignore` for repository-root builds and `backend/.dockerignore` for backend-subdirectory builds, so secrets/runtime files (`.env*`, `config/`, `homeassistant/`, virtualenvs, logs) are not sent into Docker build context.
 
 ## Environment convention
 
