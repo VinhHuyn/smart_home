@@ -1,6 +1,6 @@
 # Smart Home Project Overview
 
-_Last updated: 2026-05-15 03:25 ADT_
+_Last updated: 2026-05-15 08:30 ADT_
 
 ## Purpose
 
@@ -38,6 +38,12 @@ Secondary paths remain available for debugging and compatibility:
 - `/devices/*` — raw state inspection/update helpers.
 - `/mock/*` — mock-device catalog and convenience controls.
 
+## API authentication and container hygiene
+
+- Protected control endpoints (`/devices`, `/services`, `/commands`, `/mock/*`) require `X-API-Key` matching `SMART_HOME_API_KEY`.
+- Diagnostic endpoints remain open: `GET /` and `GET /ha/health`.
+- A root `.dockerignore` is now required to keep secrets/runtime files (`.env*`, `config/`, `homeassistant/`, virtualenvs, logs) out of Docker build context.
+
 ## Environment convention
 
 Use `backend/.env` with:
@@ -46,6 +52,7 @@ Use `backend/.env` with:
 HA_URL=http://localhost:8123
 HA_TOKEN=YOUR_HOME_ASSISTANT_LONG_LIVED_ACCESS_TOKEN
 HA_TIMEOUT_SEC=10
+SMART_HOME_API_KEY=CHANGE_ME_STRONG_RANDOM_KEY
 
 # Optional fallback only; keep commented unless intentionally used:
 # HASS_URL=http://localhost:8123
@@ -62,6 +69,8 @@ Do not commit `.env`, Home Assistant auth storage, tokens, or raw private state 
 - Tightened mock endpoint safety so mock convenience routes do not accidentally control real devices.
 - Clarified documentation for which execution layer belongs to Hermes, API endpoints, and backend services.
 - Added a self-contained HTML API documentation page with sticky navigation, syntax-highlighted code blocks, endpoint reference, and copy buttons.
+- Enforced API key protection on control endpoints via `SMART_HOME_API_KEY` + `X-API-Key`.
+- Added root `.dockerignore` to prevent secret/runtime leakage into Docker build context.
 
 ## Validation
 

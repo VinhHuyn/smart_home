@@ -1,3 +1,14 @@
+## 2026-05-15 08:30 ADT - Security + Container Hygiene Follow-up
+
+### Changed
+- Documented API-key enforcement for control endpoints (`/devices`, `/services`, `/commands`, `/mock/*`) using `SMART_HOME_API_KEY` and `X-API-Key`.
+- Documented diagnostic endpoints that remain unauthenticated (`GET /`, `GET /ha/health`).
+- Documented root `.dockerignore` requirement for Docker builds to exclude `.env*`, `config/`, `homeassistant/`, virtualenvs, logs, and caches from build context.
+- Updated `docs/PROJECT_DOC.md` environment example to include `SMART_HOME_API_KEY`.
+
+### Notes
+- These doc updates track implementation PRs #4 and #5.
+
 ## 2026-05-15 03:25 ADT - HTML API Docs Artifact
 
 ### Added
