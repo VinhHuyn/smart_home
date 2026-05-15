@@ -1,44 +1,21 @@
-# Git metadata
-.git
-.gitignore
-
 # Python artifacts
 __pycache__/
-*.py[cod]
+*.pyc
 *.pyo
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
 
-# Virtual environments
-.venv/
-venv/
-backend/.venv/
-
-# Runtime logs and temp
-*.log
-logs/
-*.pid
-*.tmp
-
-# Local env/secrets
+# Environment and secrets
 .env
 .env.*
-backend/.env
 
-# Home Assistant runtime/config data (contains secrets and should be mounted, not baked)
-config/
-homeassistant/
+# VCS and CI metadata
+.git/
+.github/
 
-# Build outputs and archives
-build/
-dist/
-*.egg-info/
-*.tar.gz
-*.zip
+# Tests and docs
+tests/
+*.md
+docs/
 
-# OS/editor noise
-.DS_Store
-Thumbs.db
+# Editor settings
 .vscode/
 .idea/
