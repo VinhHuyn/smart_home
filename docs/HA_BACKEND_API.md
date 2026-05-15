@@ -1,6 +1,6 @@
 # Home Assistant Backend API
 
-_Last updated: 2026-05-14T14:02:09Z_
+_Last updated: 2026-05-15T06:16:51Z_
 
 This document describes the modular FastAPI backend in `D:\smart_home\backend` that bridges Hermes / chat commands to the running Home Assistant container.
 
@@ -24,6 +24,7 @@ backend/
 ├── schemas/
 │   └── ha.py
 ├── services/
+│   ├── action_service.py
 │   ├── command_service.py
 │   ├── default_devices.py
 │   ├── ha_service.py
@@ -43,6 +44,7 @@ Maintenance rules:
 - Keep `main.py` thin: app creation, router registration, startup hooks only.
 - Add new HTTP endpoints in `routers/`.
 - Add business logic in `services/`.
+- Keep duplicated HA action behavior in `services/action_service.py` so `/commands`, `/services`, and mock power endpoints share payload construction, mock state updates, and verification.
 - Add request/response models in `schemas/`.
 - Add shared utilities in `core/`.
 - Keep raw Home Assistant REST calls in `ha_client.py`.
@@ -55,7 +57,14 @@ Create or update `D:\smart_home\backend\.env`:
 HA_URL=http://localhost:8123
 HA_TOKEN=YOUR_HOME_ASSISTANT_LONG_LIVED_ACCESS_TOKEN
 HA_TIMEOUT_SEC=10
+
+# Optional fallback for older Orin cutover configs only:
+# HASS_URL=http://localhost:8123
+# HASS_TOKEN=YOUR_HOME_ASSISTANT_LONG_LIVED_ACCESS_TOKEN
+# HASS_TIMEOUT_SEC=10
 ```
+
+The backend prefers `HA_*`. If both `HA_*` and `HASS_*` are present, `HA_*` wins. Keep `HASS_*` commented out unless you intentionally need the fallback path.
 
 Do not commit `.env` or Home Assistant auth/storage files.
 
@@ -81,6 +90,39 @@ Open Swagger docs:
 ```text
 http://127.0.0.1:8000/docs
 ```
+
+## Who executes what?
+
+Use this ownership model to avoid confusing Hermes execution with backend/API execution:
+
+```text
+User text / Discord
+  -> Hermes Brain or Orin Hermes agent
+     - understands natural language
+     - selects domain/service/entity_id
+     - sends HTTP POST /commands
+
+POST /commands
+  -> routers/commands.py
+     - API endpoint layer
+     - receives and validates CommandRequest
+
+services/command_service.py
+  -> execute_command(request)
+     - backend command execution wrapper
+     - converts command intent into ActionRequest
+
+services/action_service.py
+  -> execute_ha_action(...)
+     - canonical HA action executor
+     - chooses mock state update vs real HA service call
+     - performs verification
+
+ha_client.py
+  -> raw Home Assistant REST calls
+```
+
+So `execute_command()` is not the Hermes brain. It is the backend function called after Hermes has already converted natural language into a structured `POST /commands` payload.
 
 ## API overview
 
@@ -108,7 +150,7 @@ http://127.0.0.1:8000/docs
 |---|---|---|
 | `GET` | `/services` | List all HA service domains/actions |
 | `GET` | `/services/{domain}` | List services for one HA domain |
-| `POST` | `/services/{domain}/{service}` | Call an HA service |
+| `POST` | `/services/{domain}/{service}` | Secondary direct service-call path; shares `services/action_service.py` behavior with `/commands` |
 
 Example real service call:
 
@@ -122,7 +164,7 @@ For real devices, this endpoint calls HA `/api/services/{domain}/{service}`.
 
 ### Hermes-style command endpoint
 
-`POST /commands` accepts the Brain-Hermes → Orin/HA-operator schema.
+`POST /commands` accepts the Brain-Hermes → Orin/HA-operator schema. This is the canonical production automation endpoint; `/services`, `/devices`, and `/mock` are secondary direct/debug/convenience paths.
 
 Example for bedroom light off:
 

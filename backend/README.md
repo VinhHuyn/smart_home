@@ -16,9 +16,10 @@ D:\smart_home\backend
  ├── schemas\
  │   └── ha.py                       # Pydantic request/response models
  ├── services\
- │   ├── command_service.py          # Hermes command execution logic
+ │   ├── action_service.py           # shared HA action execution + verification
+ │   ├── command_service.py          # Hermes command execution wrapper
  │   ├── default_devices.py          # seed mock rooms/devices
- │   ├── ha_service.py               # HA service-call orchestration
+ │   ├── ha_service.py               # secondary HA service-call wrapper
  │   └── mock_device_service.py      # mock device state logic
  ├── routers\
  │   ├── commands.py                 # /commands API
@@ -48,6 +49,11 @@ Create/edit `.env`:
 HA_URL=http://localhost:8123
 HA_TOKEN=YOUR_HOME_ASSISTANT_LONG_LIVED_ACCESS_TOKEN
 HA_TIMEOUT_SEC=10
+
+# Backwards-compatible fallback only; keep commented out unless needed:
+# HASS_URL=http://localhost:8123
+# HASS_TOKEN=YOUR_HOME_ASSISTANT_LONG_LIVED_ACCESS_TOKEN
+# HASS_TIMEOUT_SEC=10
 ```
 
 ## Run backend
@@ -73,6 +79,32 @@ Open API docs:
 http://127.0.0.1:8000/docs
 ```
 
+## Canonical control path
+
+Use **`POST /commands`** for production automation and Hermes Brain → HA Operator control. It is the canonical path because it includes a stable command schema, before/after state reads, mock-device handling, and verification metadata.
+
+The other endpoints are kept as compatibility/debug paths:
+
+- `/services/{domain}/{service}`: direct HA-style service calls for manual testing and low-level tooling.
+- `/mock/devices/*`: mock-device convenience endpoints.
+- `/devices/*`: raw HA state inspection/update helpers.
+
+To avoid duplicated behavior, `/commands`, `/services/{domain}/{service}`, and mock power endpoints now share the same service helper in `services/action_service.py` for turn on/off/toggle, mock state updates, service payload construction, and verification.
+
+## Execution ownership
+
+Do not confuse Hermes execution with backend execution:
+
+| Layer | File/place | Job |
+|---|---|---|
+| Hermes agent/tool/client | outside this FastAPI backend | Convert user text like `bed light on` into a structured command and call `POST /commands` |
+| API endpoint | `routers/commands.py` | Receive and validate the HTTP request |
+| Command service | `services/command_service.py` | `execute_command()` converts the Hermes command envelope into an action request |
+| Action service | `services/action_service.py` | `execute_ha_action()` controls mock/real HA entities and verifies state |
+| HA client | `ha_client.py` | Performs raw Home Assistant REST calls |
+
+`execute_command()` is backend command execution. It is not the Hermes brain; Hermes has already acted by the time this function runs.
+
 ## Main endpoints
 
 | Method | Path | Purpose |
@@ -82,18 +114,18 @@ http://127.0.0.1:8000/docs
 | `GET` | `/ha/config` | Home Assistant config metadata |
 | `GET` | `/devices` | list HA states |
 | `GET` | `/devices/{entity_id}` | read one HA state |
-| `POST` | `/devices/{entity_id}/state` | set one HA state |
-| `DELETE` | `/devices/{entity_id}` | delete one HA state |
+| `POST` | `/devices/{entity_id}/state` | set one HA state/debug helper |
+| `DELETE` | `/devices/{entity_id}` | delete one HA state/debug helper |
 | `GET` | `/services` | list HA services |
 | `GET` | `/services/{domain}` | list one service domain |
-| `POST` | `/services/{domain}/{service}` | call HA service |
-| `POST` | `/commands` | Hermes Brain → HA Operator command schema |
+| `POST` | `/services/{domain}/{service}` | secondary direct service-call path |
+| `POST` | `/commands` | canonical Hermes Brain → HA Operator command schema |
 | `GET` | `/mock/rooms` | list default mock devices grouped by room |
 | `GET` | `/mock/devices` | list mock devices currently in HA |
 | `POST` | `/mock/devices` | add mock device |
-| `POST` | `/mock/devices/{entity_id}/turn_on` | turn on mock |
-| `POST` | `/mock/devices/{entity_id}/turn_off` | turn off mock |
-| `POST` | `/mock/devices/{entity_id}/toggle` | toggle mock |
+| `POST` | `/mock/devices/{entity_id}/turn_on` | secondary mock convenience path |
+| `POST` | `/mock/devices/{entity_id}/turn_off` | secondary mock convenience path |
+| `POST` | `/mock/devices/{entity_id}/toggle` | secondary mock convenience path |
 
 ## Seeded mock rooms/devices
 

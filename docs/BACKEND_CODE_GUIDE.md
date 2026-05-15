@@ -1,6 +1,6 @@
 # Backend Code Guide
 
-_Last updated: 2026-05-14 12:47 ADT_
+_Last updated: 2026-05-15 03:16 ADT_
 
 This guide explains what each backend file, class, function, and main flow does. It is meant for future maintenance, so the code can stay clean while this document carries the detailed explanation.
 
@@ -36,6 +36,41 @@ Layer rules:
 - `core/` should hold small shared helpers.
 - `ha_client.py` should be the only layer that directly talks to Home Assistant REST endpoints.
 
+## Execution ownership: Hermes vs API vs backend services
+
+There are three different "execute" layers. Keep them separate when reading or extending the project:
+
+| Layer | Where it lives | What it owns | Example |
+|---|---|---|---|
+| **Hermes execution** | Hermes agent/tool/client code outside this FastAPI backend | Understand user text, choose intent fields, then send HTTP to the backend | `"bed light on"` -> `POST /commands` payload |
+| **API endpoint layer** | `routers/commands.py` and other files under `routers/` | Receive HTTP requests, validate schemas, call service functions | `command(request)` receives `POST /commands` |
+| **Backend execution layer** | `services/command_service.py` and `services/action_service.py` | Convert structured command into an HA action, decide mock vs real execution, verify state | `execute_command()` -> `execute_ha_action()` |
+
+Important naming note: `execute_command()` is **backend command execution**, not Hermes itself. Hermes has already done its job once it creates the structured command and calls `POST /commands`.
+
+For a natural-language command like `bed light on`, the responsibility split is:
+
+```text
+Hermes Brain / Orin Hermes
+  understands: "bed light on"
+  chooses: domain=light, service=turn_on, entity_id=light.mock_bedroom_lamp
+  sends: POST /commands
+
+FastAPI router
+  receives the HTTP request
+  validates CommandRequest
+  calls execute_command(request)
+
+Backend services
+  convert CommandRequest -> ActionRequest
+  run execute_ha_action(...)
+  choose mock state update or real HA service call
+  verify state when requested
+
+Home Assistant client
+  performs raw REST calls to /api/states or /api/services
+```
+
 ## Request flow examples
 
 ### Hermes command flow: `POST /commands`
@@ -44,6 +79,7 @@ Layer rules:
 POST /commands
   -> routers/commands.py: command()
   -> services/command_service.py: execute_command()
+  -> services/action_service.py: execute_ha_action()
   -> ha_client.py: get_state(), set_state(), or call_service()
   -> Home Assistant
   -> response shaped as ha.command.result
@@ -65,7 +101,8 @@ This is the best endpoint for Hermes automation because it supports:
 POST /mock/devices/light.mock_bedroom_lamp/turn_on
   -> routers/mock_devices.py: turn_on_mock_device()
   -> services/mock_device_service.py: set_mock_device_power()
-  -> ha_client.py: set_state()
+  -> services/action_service.py: execute_ha_action(require_mock_device=True)
+  -> ha_client.py: get_state(), set_state()
   -> Home Assistant /api/states/{entity_id}
 ```
 
@@ -77,8 +114,9 @@ This is useful for quick testing because it directly changes the virtual HA enti
 POST /services/light/turn_off
   -> routers/services.py: call_service()
   -> services/ha_service.py: call_service()
-  -> ha_client.py: call_service()
-  -> Home Assistant /api/services/light/turn_off
+  -> services/action_service.py: execute_ha_action()
+  -> ha_client.py: get_state(), set_state(), or call_service()
+  -> Home Assistant
 ```
 
 Use this when you want to call a Home Assistant domain/service directly.
@@ -153,13 +191,19 @@ Fields:
 
 ### `HomeAssistantSettings.from_env()`
 
-Reads environment variables:
+Reads environment variables, preferring the active `HA_*` pair:
 
 - `HA_URL`
 - `HA_TOKEN`
 - `HA_TIMEOUT_SEC`
 
-It strips trailing `/` from `HA_URL` so path joining is predictable.
+Backwards-compatible fallback keys are still supported only when the matching `HA_*` key is absent:
+
+- `HASS_URL`
+- `HASS_TOKEN`
+- `HASS_TIMEOUT_SEC`
+
+It strips trailing `/` from the selected URL so path joining is predictable.
 
 ### `HomeAssistantClient.__init__(settings=None)`
 
@@ -483,24 +527,39 @@ Fields:
 
 ---
 
+## `services/action_service.py`
+
+Purpose: Shared Home Assistant action executor used by `/commands`, `/services/{domain}/{service}`, and mock power convenience endpoints.
+
+This file exists to prevent duplicated endpoint behavior. It owns the common control logic:
+
+- Build final HA service payloads.
+- Read state before execution when there is a single `entity_id`.
+- Route mock `light`/`switch` power commands through HA state updates instead of physical service calls.
+- Call real HA services for non-mock actions.
+- Read state after execution when possible.
+- Compute expected states for `turn_on`, `turn_off`, and `toggle`.
+- Return consistent verification metadata.
+
+Important safety behavior:
+
+- `require_mock_device=True` is used by `/mock/devices/*` endpoints.
+- With that flag, the target must already have `attributes.mock_device: true`.
+- If not, the endpoint returns an HA-style 404 instead of accidentally controlling a real device.
+
+Verification behavior:
+
+- `performed: true` only when there is an expected state and an after-state to compare.
+- `verified: true/false` only when verification was actually performed.
+- `verified: null` when verification was requested but could not be performed.
+
+---
+
 ## `services/command_service.py`
 
-Purpose: Main Hermes command execution workflow.
+Purpose: Hermes command envelope wrapper around the canonical action executor.
 
-This is the most important service for Hermes -> Home Assistant control.
-
-### `expected_state_for_service(service, explicit_expected_state=None)`
-
-Determines what state should be expected after a service call.
-
-Rules:
-
-- If `explicit_expected_state` is provided, return it.
-- If service is `turn_on`, expected state is `on`.
-- If service is `turn_off`, expected state is `off`.
-- Otherwise return `None`.
-
-Why `toggle` returns `None`: the expected state depends on the previous state unless separately calculated.
+This is the production automation entry point for Hermes -> Home Assistant control. It maps the full `ha.command.request` schema into `ActionRequest`, catches `HomeAssistantError`, and returns a structured `ha.command.result` payload even when HA fails.
 
 ### `command_service_data(intent)`
 
@@ -521,41 +580,14 @@ Example:
 }
 ```
 
-### `_is_mock_power_command(before, request, entity_id)`
-
-Checks whether the command should be handled as a mock device state update instead of a real HA service call.
-
-Returns true only when:
-
-- The entity already exists.
-- Entity attributes include `mock_device: true`.
-- Domain is `light` or `switch`.
-- Service is `turn_on`, `turn_off`, or `toggle`.
-- `entity_id` is a single string.
-
-Why this matters: Home Assistant service calls do not control virtual states the same way physical devices are controlled. Mock devices are more reliable when updated through `/api/states/{entity_id}`.
-
 ### `execute_command(request)`
 
-Runs the full command workflow.
-
-Steps:
-
-1. Compute expected final state.
-2. Build Home Assistant service payload.
-3. Extract `entity_id` only if it is a single string.
-4. If `dry_run` is true, return a planned call without touching HA.
-5. If an entity ID exists, read current state before execution.
-6. If it is a mock power command, update state directly with `ha_client.set_state()`.
-7. Otherwise, call the real HA service with `ha_client.call_service()`.
-8. Read state after the command when possible.
-9. Verify state if verification is required and expected state is known.
-10. Return a structured `ha.command.result` payload.
+Runs the command workflow by delegating actual HA action behavior to `services/action_service.py`.
 
 Important result statuses:
 
 - `dry_run`: command was not executed.
-- `success`: command executed and verification passed or was not needed.
+- `success`: command executed and verification passed, was not requested, or could not be performed.
 - `verification_failed`: command executed but observed state did not match expected state.
 - `failed`: Home Assistant request failed.
 
@@ -567,22 +599,11 @@ If HA raises `HomeAssistantError`, the function catches it and returns a structu
 
 ## `services/ha_service.py`
 
-Purpose: Business wrapper for direct Home Assistant service calls.
+Purpose: Thin wrapper for secondary direct Home Assistant service calls.
 
 ### `call_service(domain, service, request)`
 
-Runs a direct HA service call and optional verification.
-
-Steps:
-
-1. Copy `request.service_data`.
-2. Add `request.entity_id` to service payload if provided.
-3. Read state before the call when `entity_id` is a single string.
-4. Call Home Assistant service with `ha_client.call_service()`.
-5. Read state after the call when possible.
-6. Compute expected state from service name or `request.expected_state`.
-7. Verify state if `request.require_verification` is true.
-8. Return call result and verification details.
+Maps `/services/{domain}/{service}` requests into `ActionRequest` and calls `execute_ha_action()`. This keeps direct service calls aligned with `/commands` behavior for payload construction, mock-device routing, and verification.
 
 Difference from `execute_command()`: this function is for direct `/services/{domain}/{service}` calls and does not use the full Hermes command envelope.
 

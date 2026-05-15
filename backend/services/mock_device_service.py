@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 import ha_client
 from schemas.ha import MockDeviceCreate
+from services.action_service import ActionRequest, execute_ha_action
 from services.default_devices import DEFAULT_MOCK_DEVICES
 
 
@@ -43,23 +44,38 @@ def list_mock_devices() -> list[dict[str, Any]]:
     return [item for item in states if item.get("attributes", {}).get("mock_device") is True]
 
 
+def _entity_domain(entity_id: str) -> str:
+    return entity_id.split(".", 1)[0]
+
+
 def set_mock_device_power(entity_id: str, state: Literal["on", "off"]) -> dict[str, Any]:
-    name = entity_id.split(".", 1)[1].replace("_", " ").title()
-    domain = entity_id.split(".", 1)[0]
-    return ha_client.set_state(
-        entity_id,
-        state,
-        {
-            "friendly_name": name,
-            "supported_features": 0,
-            "mock_device": True,
-            "managed_by": "smart-home-ha-backend",
-            "domain": domain,
-        },
+    """Compatibility wrapper for mock power endpoints.
+
+    The actual turn_on/turn_off + verification behavior now runs through the
+    canonical action executor used by /commands and /services.
+    """
+
+    result = execute_ha_action(
+        ActionRequest(
+            domain=_entity_domain(entity_id),
+            service="turn_on" if state == "on" else "turn_off",
+            entity_id=entity_id,
+            require_verification=True,
+            require_mock_device=True,
+            expected_state=state,
+        )
     )
+    return result["ha_response"]
 
 
 def toggle_mock_device(entity_id: str) -> dict[str, Any]:
-    current = ha_client.get_state(entity_id)
-    next_state: Literal["on", "off"] = "off" if current.get("state") == "on" else "on"
-    return set_mock_device_power(entity_id, next_state)
+    result = execute_ha_action(
+        ActionRequest(
+            domain=_entity_domain(entity_id),
+            service="toggle",
+            entity_id=entity_id,
+            require_verification=True,
+            require_mock_device=True,
+        )
+    )
+    return result["ha_response"]
