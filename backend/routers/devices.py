@@ -1,9 +1,6 @@
 from __future__ import annotations
-
 from typing import Any
-
 from fastapi import APIRouter, Response, status
-
 import ha_client
 from core.errors import ha_error_response
 from ha_client import HomeAssistantError
@@ -14,6 +11,7 @@ router = APIRouter(prefix="/devices", tags=["devices"])
 
 @router.get("")
 def devices() -> list[dict[str, Any]]:
+    """Return all HA entity states."""
     try:
         return ha_client.get_states()
     except HomeAssistantError as exc:
@@ -22,6 +20,7 @@ def devices() -> list[dict[str, Any]]:
 
 @router.get("/{entity_id}")
 def device(entity_id: str) -> dict[str, Any]:
+    """Return one HA entity state."""
     try:
         return ha_client.get_state(entity_id)
     except HomeAssistantError as exc:
@@ -29,7 +28,12 @@ def device(entity_id: str) -> dict[str, Any]:
 
 
 @router.put("/{entity_id}")
-def update_device_legacy(entity_id: str, state: str, attributes: dict[str, Any] | None = None) -> dict[str, Any]:
+def update_device_legacy(
+    entity_id: str,
+    state: str,
+    attributes: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Set one HA entity state through the legacy PUT route."""
     try:
         return ha_client.set_state(entity_id, state, attributes)
     except HomeAssistantError as exc:
@@ -38,6 +42,7 @@ def update_device_legacy(entity_id: str, state: str, attributes: dict[str, Any] 
 
 @router.post("/{entity_id}/state")
 def update_device_state(entity_id: str, request: StateUpdate) -> dict[str, Any]:
+    """Set one HA entity state through the current state route."""
     try:
         return ha_client.set_state(entity_id, request.state, request.attributes)
     except HomeAssistantError as exc:
@@ -46,6 +51,7 @@ def update_device_state(entity_id: str, request: StateUpdate) -> dict[str, Any]:
 
 @router.delete("/{entity_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_device(entity_id: str) -> Response:
+    """Delete one HA entity state."""
     try:
         ha_client.delete_state(entity_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)

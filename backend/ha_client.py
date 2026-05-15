@@ -1,17 +1,4 @@
-"""Home Assistant REST API client used by the FastAPI backend.
-
-The backend intentionally talks to Home Assistant through its official REST API:
-- GET /api/
-- GET /api/config
-- GET/POST/DELETE /api/states/{entity_id}
-- GET /api/services
-- POST /api/services/{domain}/{service}
-
-Virtual/mock devices are represented as HA entity states created through
-/api/states/{entity_id}. This is enough for backend testing without physical
-hardware. Real devices can later use the same command API but point to their
-actual entity_id values.
-"""
+"""Home Assistant REST API client used by the FastAPI backend."""
 
 from __future__ import annotations
 
@@ -24,11 +11,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+DEFAULT_HA_URL = "http://localhost:8123"
+DEFAULT_HA_TIMEOUT_SEC = "10"
+
 
 class HomeAssistantError(RuntimeError):
     """Raised when Home Assistant returns an error or cannot be reached."""
 
-    def __init__(self, message: str, *, status_code: int | None = None, payload: Any = None):
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+        payload: Any = None,
+    ):
         super().__init__(message)
         self.status_code = status_code
         self.payload = payload
@@ -42,12 +38,13 @@ class HomeAssistantSettings:
 
     @classmethod
     def from_env(cls) -> "HomeAssistantSettings":
-        # Prefer HA_* for this backend. HASS_* remains a backwards-compatible
-        # fallback for older Orin cutover configs, but commented-out HASS_* keys
-        # should not override the active HA_* target/token pair.
-        url = os.getenv("HA_URL") or os.getenv("HASS_URL", "http://localhost:8123")
+        """Load HA settings while keeping legacy HASS_* fallback keys."""
+        url = os.getenv("HA_URL") or os.getenv("HASS_URL", DEFAULT_HA_URL)
         token = os.getenv("HA_TOKEN") or os.getenv("HASS_TOKEN", "")
-        timeout_sec = float(os.getenv("HA_TIMEOUT_SEC") or os.getenv("HASS_TIMEOUT_SEC", "10"))
+        timeout_sec = float(
+            os.getenv("HA_TIMEOUT_SEC")
+            or os.getenv("HASS_TIMEOUT_SEC", DEFAULT_HA_TIMEOUT_SEC)
+        )
         return cls(url=url.rstrip("/"), token=token, timeout_sec=timeout_sec)
 
 
@@ -57,17 +54,20 @@ class HomeAssistantClient:
 
     @property
     def headers(self) -> dict[str, str]:
+        """Build JSON headers with optional bearer auth."""
         headers = {"Content-Type": "application/json"}
         if self.settings.token:
             headers["Authorization"] = f"Bearer {self.settings.token}"
         return headers
 
     def _url(self, path: str) -> str:
+        """Build an absolute HA API URL from a path."""
         if not path.startswith("/"):
             path = f"/{path}"
         return f"{self.settings.url}{path}"
 
     def _request(self, method: str, path: str, **kwargs: Any) -> Any:
+        """Send one HA REST request and return parsed response content."""
         try:
             response = requests.request(
                 method,
@@ -97,18 +97,22 @@ class HomeAssistantClient:
         return payload
 
     def health(self) -> dict[str, Any]:
+        """Return HA API health response."""
         response = self._request("GET", "/api/")
         if isinstance(response, dict):
             return response
         return {"message": response}
 
     def get_config(self) -> dict[str, Any]:
+        """Return Home Assistant configuration metadata."""
         return self._request("GET", "/api/config")
 
     def get_states(self) -> list[dict[str, Any]]:
+        """Return all Home Assistant entity states."""
         return self._request("GET", "/api/states")
 
     def get_state(self, entity_id: str) -> dict[str, Any]:
+        """Return one Home Assistant entity state."""
         return self._request("GET", f"/api/states/{entity_id}")
 
     def set_state(
@@ -117,6 +121,7 @@ class HomeAssistantClient:
         state: str,
         attributes: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        """Set one Home Assistant entity state."""
         return self._request(
             "POST",
             f"/api/states/{entity_id}",
@@ -124,10 +129,12 @@ class HomeAssistantClient:
         )
 
     def delete_state(self, entity_id: str) -> bool:
+        """Delete one Home Assistant entity state."""
         self._request("DELETE", f"/api/states/{entity_id}")
         return True
 
     def get_services(self) -> list[dict[str, Any]]:
+        """Return Home Assistant service domains."""
         return self._request("GET", "/api/services")
 
     def call_service(
@@ -136,6 +143,7 @@ class HomeAssistantClient:
         service: str,
         service_data: dict[str, Any] | None = None,
     ) -> Any:
+        """Call one Home Assistant service endpoint."""
         return self._request(
             "POST",
             f"/api/services/{domain}/{service}",
@@ -146,30 +154,45 @@ class HomeAssistantClient:
 _default_client = HomeAssistantClient()
 
 
-# Backwards-compatible function API used by earlier main.py versions.
+# Older router code imports module functions, so keep these thin wrappers.
 def get_states() -> list[dict[str, Any]]:
+    """Return all Home Assistant entity states."""
     return _default_client.get_states()
 
 
 def get_state(entity_id: str) -> dict[str, Any]:
+    """Return one Home Assistant entity state."""
     return _default_client.get_state(entity_id)
 
 
-def set_state(entity_id: str, state: str, attributes: dict[str, Any] | None = None) -> dict[str, Any]:
+def set_state(
+    entity_id: str,
+    state: str,
+    attributes: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Set one Home Assistant entity state."""
     return _default_client.set_state(entity_id, state, attributes)
 
 
 def delete_state(entity_id: str) -> bool:
+    """Delete one Home Assistant entity state."""
     return _default_client.delete_state(entity_id)
 
 
 def get_config() -> dict[str, Any]:
+    """Return Home Assistant configuration metadata."""
     return _default_client.get_config()
 
 
 def get_services() -> list[dict[str, Any]]:
+    """Return Home Assistant service domains."""
     return _default_client.get_services()
 
 
-def call_service(domain: str, service: str, service_data: dict[str, Any] | None = None) -> Any:
+def call_service(
+    domain: str,
+    service: str,
+    service_data: dict[str, Any] | None = None,
+) -> Any:
+    """Call one Home Assistant service endpoint."""
     return _default_client.call_service(domain, service, service_data)
