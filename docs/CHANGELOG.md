@@ -1,3 +1,39 @@
+## 2026-05-15 03:25 ADT - HTML API Docs Artifact
+
+### Added
+- Added `docs/SMART_HOME_API_DOCS.html`, a standalone dark industrial developer-docs page for the Smart Home HA Backend with sticky navigation, endpoint reference, syntax-highlighted code blocks, tabbed examples, and copy-to-clipboard controls.
+
+### Changed
+- Updated `docs/PROJECT_DOC.md` to reference the new HTML docs artifact.
+- Refreshed `docs/PROJECT_TREE.md`.
+
+### Notes
+- The HTML docs use placeholder/redacted token examples only; no real credentials were copied.
+
+## 2026-05-15 03:16 ADT - Execution Layer Docs
+
+### Changed
+- Clarified Hermes-side execution versus FastAPI endpoint handling and backend command/action execution in `docs/BACKEND_CODE_GUIDE.md`, `docs/HA_BACKEND_API.md`, `docs/PROJECT_DOC.md`, and `backend/README.md`.
+- Documented that `execute_command()` is backend command execution after Hermes sends `POST /commands`, not the Hermes brain itself.
+
+### Notes
+- No token values or `.env` contents were copied into documentation.
+
+## 2026-05-15 01:58 ADT - Backend Action Path + HA Env Docs
+
+### Added
+- Added `backend/services/action_service.py` as the shared HA action executor for `/commands`, `/services/{domain}/{service}`, and mock power convenience endpoints.
+- Added tests for HA env precedence, mock endpoint safety, toggle expected-state verification, and unverifiable-action reporting.
+
+### Changed
+- Restored `HA_URL`, `HA_TOKEN`, and `HA_TIMEOUT_SEC` as the preferred backend env keys; `HASS_*` remains only as a commented/backwards-compatible fallback.
+- Documented `POST /commands` as the canonical production automation endpoint; `/services`, `/devices`, and `/mock` are secondary direct/debug/convenience paths.
+- Updated backend/API/code-guide docs to describe the shared action executor and verification semantics.
+- Refreshed `docs/PROJECT_TREE.md`.
+
+### Notes
+- No token values or `.env` contents were copied into documentation.
+
 ## 2026-05-14 14:48 ADT - Doc Sync
 
 ### Changed

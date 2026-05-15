@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Industrial dark-mode developer documentation for the Smart Home HA Backend FastAPI REST API." />
+  <title>Smart Home HA Backend — Developer Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #05080d;
+      --bg-2: #080d14;
+      --panel: #0d141e;
+      --panel-2: #111b28;
+      --panel-3: #152232;
+      --line: #263445;
+      --line-strong: #3a5068;
+      --text: #f5f8fb;
+      --muted: #a8b4c2;
+      --dim: #708092;
+      --cyan: #00d4ff;
+      --cyan-2: #53f1ff;
+      --blue: #2689ff;
+      --green: #34d399;
+      --red: #fb5c6c;
+      --amber: #f6c350;
+      --violet: #9b7cff;
+      --shadow: 0 24px 80px rgba(0, 0, 0, .45);
+      --glow-cyan: 0 0 0 1px rgba(0, 212, 255, .22), 0 0 28px rgba(0, 212, 255, .14);
+      --radius: 18px;
+      --sidebar: 296px;
+      --header: 68px;
+      --font-body: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 0%, rgba(0, 212, 255, .16), transparent 34rem),
+        radial-gradient(circle at 88% 12%, rgba(38, 137, 255, .12), transparent 28rem),
+        linear-gradient(180deg, #05080d 0%, #07101a 42%, #05080d 100%);
+      color: var(--text);
+      font-family: var(--font-body);
+      line-height: 1.62;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      opacity: .44;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, black, transparent 92%);
+    }
+
+    a { color: var(--cyan-2); text-decoration: none; }
+    a:hover { color: white; }
+    :focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+
+    .mobile-topbar {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 80;
+      height: var(--header);
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      background: rgba(5, 8, 13, .86);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+    }
+
+    .hamburger {
+      min-width: 44px;
+      min-height: 44px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #132031, #0b121b);
+      color: var(--text);
+      font: 700 18px/1 var(--font-mono);
+      cursor: pointer;
+    }
+
+    .layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 20px;
+      background: rgba(7, 12, 19, .88);
+      border-right: 1px solid var(--line);
+      backdrop-filter: blur(22px);
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 8px 8px 22px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 18px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(0, 212, 255, .45);
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(0, 212, 255, .18), rgba(38, 137, 255, .07));
+      box-shadow: var(--glow-cyan);
+      font-family: var(--font-mono);
+      font-weight: 800;
+      color: var(--cyan-2);
+    }
+
+    .brand-title { margin: 0; font-weight: 800; letter-spacing: -.04em; line-height: 1.1; }
+    .brand-subtitle { margin: 4px 0 0; color: var(--muted); font: 500 12px/1.2 var(--font-mono); }
+
+    .nav-label {
+      margin: 22px 8px 9px;
+      color: var(--dim);
+      font: 700 11px/1 var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 38px;
+      padding: 9px 10px;
+      border-radius: 11px;
+      color: var(--muted);
+      font-size: 14px;
+      transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+    }
+
+    .nav-link::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 99px;
+      background: var(--line-strong);
+      box-shadow: none;
+      flex: 0 0 auto;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      color: var(--text);
+      background: rgba(0, 212, 255, .08);
+      box-shadow: inset 0 0 0 1px rgba(0, 212, 255, .14);
+    }
+
+    .nav-link.active::before { background: var(--cyan); box-shadow: 0 0 16px var(--cyan); }
+
+    .side-card {
+      margin-top: 26px;
+      padding: 14px;
+      border: 1px solid rgba(0, 212, 255, .18);
+      border-radius: 15px;
+      background: linear-gradient(180deg, rgba(0, 212, 255, .06), rgba(255, 255, 255, .025));
+    }
+    .side-card strong { display: block; margin-bottom: 4px; font-size: 13px; }
+    .side-card span { color: var(--muted); font-size: 12px; }
+
+    main { min-width: 0; }
+    .content { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 42px 0 84px; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 540px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr);
+      gap: 34px;
+      align-items: center;
+      padding: 44px;
+      border: 1px solid rgba(83, 241, 255, .18);
+      border-radius: 28px;
+      background:
+        linear-gradient(135deg, rgba(17, 27, 40, .92), rgba(5, 8, 13, .9)),
+        radial-gradient(circle at 80% 25%, rgba(0, 212, 255, .2), transparent 20rem);
+      box-shadow: var(--shadow), var(--glow-cyan);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% -25% 42%;
+      height: 260px;
+      transform: rotate(-8deg);
+      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, .13), transparent);
+      filter: blur(18px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      margin: 0 0 18px;
+      border: 1px solid rgba(0, 212, 255, .28);
+      border-radius: 999px;
+      color: var(--cyan-2);
+      background: rgba(0, 212, 255, .075);
+      font: 700 12px/1 var(--font-mono);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, h4 { letter-spacing: -.04em; line-height: 1.05; }
+    h1 { margin: 0; max-width: 780px; font-size: clamp(48px, 8vw, 96px); }
+    h2 { margin: 0 0 14px; font-size: clamp(32px, 4.2vw, 56px); }
+    h3 { margin: 0 0 12px; font-size: 24px; }
+    h4 { margin: 0 0 8px; font-size: 17px; }
+    p { color: var(--muted); }
+    .hero p { max-width: 680px; font-size: 18px; }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .button {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: linear-gradient(180deg, #152334, #0b121b);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    }
+    .button.primary { border-color: rgba(0, 212, 255, .52); background: linear-gradient(180deg, #0b5c84, #0b2742); box-shadow: var(--glow-cyan); }
+    .button:hover { transform: translateY(-1px); border-color: var(--cyan); box-shadow: var(--glow-cyan); }
+
+    .terminal-card {
+      position: relative;
+      z-index: 1;
+      border: 1px solid rgba(83, 241, 255, .18);
+      border-radius: 22px;
+      background: rgba(3, 7, 12, .76);
+      box-shadow: 0 28px 70px rgba(0,0,0,.38);
+      overflow: hidden;
+    }
+    .terminal-top { display: flex; gap: 8px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.035); }
+    .dot { width: 10px; height: 10px; border-radius: 99px; background: var(--red); }
+    .dot:nth-child(2) { background: var(--amber); }
+    .dot:nth-child(3) { background: var(--green); }
+    .terminal-title { margin-left: auto; color: var(--dim); font: 600 12px/1 var(--font-mono); }
+    .terminal-body { padding: 20px; font-family: var(--font-mono); font-size: 13px; color: #dce7f2; }
+    .prompt-line { display: block; margin: 8px 0; white-space: pre-wrap; }
+    .prompt-line .key { color: var(--cyan-2); }
+    .prompt-line .ok { color: var(--green); }
+    .prompt-line .warn { color: var(--amber); }
+
+    section { margin-top: 72px; }
+    .section-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: end; margin-bottom: 24px; }
+    .section-kicker { margin: 0 0 8px; color: var(--cyan-2); font: 800 12px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .14em; }
+    .section-head p { max-width: 760px; margin: 0; }
+
+    .grid { display: grid; gap: 18px; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .card {
+      padding: 22px;
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(17, 27, 40, .88), rgba(9, 14, 22, .92));
+      box-shadow: 0 14px 50px rgba(0,0,0,.18);
+    }
+    .card:hover { border-color: rgba(0, 212, 255, .25); }
+    .metric-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255,255,255,.035);
+      font: 700 12px/1 var(--font-mono);
+    }
+    .badge.version { color: var(--cyan-2); border-color: rgba(0, 212, 255, .32); }
+
+    .method { display: inline-flex; min-width: 62px; justify-content: center; padding: 6px 9px; border-radius: 8px; color: #021018; font: 800 12px/1 var(--font-mono); }
+    .method.get { background: #60a5fa; }
+    .method.post { background: #34d399; }
+    .method.delete { background: #fb7185; }
+    .route { color: var(--text); font-family: var(--font-mono); overflow-wrap: anywhere; }
+
+    .endpoint {
+      margin-bottom: 22px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 20px;
+      background: rgba(13, 20, 30, .72);
+      overflow: hidden;
+    }
+    .endpoint-head {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(90deg, rgba(0, 212, 255, .08), transparent);
+    }
+    .endpoint-title { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; min-width: 0; }
+    .endpoint-body { padding: 20px; }
+
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 14px; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid rgba(255,255,255,.08); text-align: left; vertical-align: top; }
+    th { color: var(--text); background: rgba(255,255,255,.055); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    td { color: var(--muted); }
+    td code, th code { color: var(--cyan-2); }
+    .table-wrap { overflow-x: auto; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; }
+
+    .code-block {
+      position: relative;
+      margin: 14px 0 20px;
+      border: 1px solid rgba(83, 241, 255, .14);
+      border-radius: 16px;
+      overflow: hidden;
+      background: #070b12;
+    }
+    .code-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      color: var(--dim);
+      background: rgba(255,255,255,.035);
+      font: 700 12px/1 var(--font-mono);
+    }
+    .copy-btn {
+      min-height: 32px;
+      padding: 7px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      background: #101a27;
+      color: var(--text);
+      font: 700 12px/1 var(--font-mono);
+      cursor: pointer;
+    }
+    .copy-btn:hover { border-color: var(--cyan); box-shadow: 0 0 18px rgba(0, 212, 255, .16); }
+    pre { margin: 0; overflow-x: auto; }
+    pre code.hljs { padding: 18px; background: #070b12; font-family: var(--font-mono); font-size: 13px; line-height: 1.55; }
+
+    .syntax-key { color: #7dd3fc; }
+    .syntax-string { color: #a7f3d0; }
+    .syntax-number { color: #fbbf24; }
+    .syntax-bool { color: #c4b5fd; }
+    .syntax-comment { color: #7f8ea3; font-style: italic; }
+    .syntax-command { color: #67e8f9; }
+
+    .tabs { border: 1px solid rgba(255,255,255,.1); border-radius: 20px; background: rgba(13, 20, 30, .72); overflow: hidden; }
+    .tab-list { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.03); overflow-x: auto; }
+    .tab-button {
+      min-height: 42px;
+      padding: 10px 14px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      background: transparent;
+      color: var(--muted);
+      font: 800 13px/1 var(--font-mono);
+      cursor: pointer;
+    }
+    .tab-button[aria-selected="true"] { color: var(--text); border-color: rgba(0, 212, 255, .28); background: rgba(0, 212, 255, .08); box-shadow: var(--glow-cyan); }
+    .tab-panel { display: none; padding: 18px; }
+    .tab-panel.active { display: block; }
+
+    .callout {
+      padding: 18px 20px;
+      border: 1px solid rgba(246, 195, 80, .25);
+      border-radius: 16px;
+      background: rgba(246, 195, 80, .08);
+      color: #ffe8a3;
+    }
+    .callout strong { color: #fff3c4; }
+
+    .footer {
+      margin-top: 80px;
+      padding-top: 26px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .pill-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .built-with { display: inline-flex; padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.035); color: var(--muted); font: 700 12px/1 var(--font-mono); }
+
+    @media (max-width: 980px) {
+      .mobile-topbar { display: flex; }
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; z-index: 100; inset: var(--header) auto 0 0; width: min(86vw, 330px); height: calc(100vh - var(--header)); transform: translateX(-104%); transition: transform .2s ease; }
+      body.nav-open .sidebar { transform: translateX(0); }
+      body.nav-open::after { content: ""; position: fixed; inset: var(--header) 0 0; z-index: 90; background: rgba(0,0,0,.48); }
+      .content { width: min(100% - 28px, 760px); padding-top: 22px; }
+      .hero { grid-template-columns: 1fr; padding: 28px; min-height: unset; }
+      .grid.two, .grid.three { grid-template-columns: 1fr; }
+      .section-head { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      h1 { font-size: 44px; }
+      h2 { font-size: 32px; }
+      .hero { padding: 22px; border-radius: 20px; }
+      .endpoint-head { align-items: flex-start; }
+      .terminal-body { font-size: 12px; }
+      th, td { padding: 11px 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="mobile-topbar">
+    <div class="brand" style="padding:0;border:0;margin:0">
+      <div class="brand-mark">HA</div>
+      <div><p class="brand-title">Smart Home API</p><p class="brand-subtitle">field docs</p></div>
+    </div>
+    <button class="hamburger" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Documentation navigation">
+      <div class="brand">
+        <div class="brand-mark">HA</div>
+        <div>
+          <p class="brand-title">Smart Home<br>HA Backend</p>
+          <p class="brand-subtitle">FastAPI · HA · Docker</p>
+        </div>
+      </div>
+      <p class="nav-label">Docs</p>
+      <nav>
+        <a class="nav-link" href="#hero">Overview</a>
+        <a class="nav-link" href="#getting-started">Getting Started</a>
+        <a class="nav-link" href="#authentication">Authentication</a>
+        <a class="nav-link" href="#endpoints">Endpoints</a>
+        <a class="nav-link" href="#entity-types">Entity Types</a>
+        <a class="nav-link" href="#errors">Errors</a>
+        <a class="nav-link" href="#examples">Code Examples</a>
+        <a class="nav-link" href="#footer">Footer</a>
+      </nav>
+      <p class="nav-label">Operational note</p>
+      <div class="side-card">
+        <strong>Canonical config</strong>
+        <span>Use <code>HA_URL</code>, <code>HA_TOKEN</code>, and <code>HA_TIMEOUT_SEC</code>. Keep <code>HASS_*</code> as fallback only.</span>
+      </div>
+    </aside>
+
+    <main>
+      <div class="content">
+        <section id="hero" class="hero" aria-labelledby="hero-title">
+          <div>
+            <p class="eyebrow">REST control plane · Home Assistant bridge</p>
+            <h1 id="hero-title">Smart Home HA Backend</h1>
+            <p>Industrial-grade FastAPI documentation for controlling lights, switches, covers, climate, sensors, and mock devices through a clean HTTP interface running alongside Home Assistant.</p>
+            <div class="metric-row" aria-label="Project metadata">
+              <span class="badge version">v0.1.0</span>
+              <span class="badge">FastAPI service</span>
+              <span class="badge">HA REST adapter</span>
+              <span class="badge">Hermes-ready</span>
+            </div>
+            <div class="actions">
+              <a class="button primary" href="#getting-started">Start integration</a>
+              <a class="button" href="../backend/README.md">Backend README</a>
+              <a class="button" href="https://github.com/" rel="noreferrer">GitHub</a>
+            </div>
+          </div>
+          <div class="terminal-card" aria-label="Quick install terminal card">
+            <div class="terminal-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="terminal-title">operator@smart-home</span></div>
+            <div class="terminal-body">
+              <span class="prompt-line"><span class="key">$</span> cd /mnt/d/smart_home/backend</span>
+              <span class="prompt-line"><span class="key">$</span> cp .env.example .env</span>
+              <span class="prompt-line"><span class="key">$</span> .venv/Scripts/python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000</span>
+              <span class="prompt-line"><span class="ok">✓</span> API online at http://127.0.0.1:8000</span>
+              <span class="prompt-line"><span class="warn">!</span> Use HA_TOKEN=[REDACTED] in .env</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="getting-started" aria-labelledby="getting-started-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">01 · Boot sequence</p>
+              <h2 id="getting-started-title">Getting Started</h2>
+              <p>Run the backend near your Home Assistant instance. Keep the API thin: HTTP routes call services; services call Home Assistant through the low-level client.</p>
+            </div>
+          </div>
+
+          <div class="grid three">
+            <article class="card"><h3>Prerequisites</h3><p>Docker or Docker Compose, Home Assistant running on the LAN or localhost, Python 3.11+, and a Home Assistant Long-Lived Access Token.</p></article>
+            <article class="card"><h3>Runtime</h3><p>The backend runs as a FastAPI process from <code>D:\smart_home\backend</code> or <code>/mnt/d/smart_home/backend</code>.</p></article>
+            <article class="card"><h3>Control path</h3><p>Hermes automation should prefer <code>POST /commands</code>; direct device endpoints are useful for manual API clients and testing.</p></article>
+          </div>
+
+          <h3>Docker Compose snippet</h3>
+          <div class="code-block">
+            <div class="code-label"><span>docker-compose.yml</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code class="language-yaml">services:
+  smart-home-api:
+    build: ./backend
+    container_name: smart-home-api
+    restart: unless-stopped
+    environment:
+      HA_URL: http://homeassistant:8123
+      HA_TOKEN: ${HA_TOKEN}
+      HA_TIMEOUT_SEC: 10
+    ports:
+      - "8000:8000"
+    depends_on:
+      - homeassistant
+
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: homeassistant
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./config:/config</code></pre>
+          </div>
+
+          <h3>Environment variables</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Required</th><th>Example</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><code>HA_URL</code></td><td>Yes</td><td><code>http://localhost:8123</code></td><td>Home Assistant base URL. This is the preferred key.</td></tr>
+                <tr><td><code>HA_TOKEN</code></td><td>Yes</td><td><code>[REDACTED]</code></td><td>Home Assistant Long-Lived Access Token. Never commit it.</td></tr>
+                <tr><td><code>HA_TIMEOUT_SEC</code></td><td>No</td><td><code>10</code></td><td>HTTP timeout for HA REST calls.</td></tr>
+                <tr><td><code>HASS_*</code></td><td>No</td><td>commented out</td><td>Backward-compatible fallback only. <code>HA_*</code> wins when both exist.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="authentication" aria-labelledby="authentication-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">02 · Secure channel</p>
+              <h2 id="authentication-title">Authentication</h2>
+              <p>Home Assistant uses bearer tokens for REST API access. Store the token in the backend environment; do not paste real tokens into docs, source files, or chat logs.</p>
+            </div>
+          </div>
+          <div class="grid two">
+            <article class="card">
+              <h3>Generate token</h3>
+              <ol>
+                <li>Open Home Assistant.</li>
+                <li>Go to your user profile.</li>
+                <li>Scroll to <strong>Long-Lived Access Tokens</strong>.</li>
+                <li>Create a token named <code>smart-home-api</code>.</li>
+                <li>Copy it once and put it in <code>backend/.env</code> as <code>HA_TOKEN</code>.</li>
+              </ol>
+            </article>
+            <article class="card">
+              <h3>Bearer header</h3>
+              <p>When testing Home Assistant directly, pass the token as:</p>
+              <div class="code-block">
+                <div class="code-label"><span>header</span><button class="copy-btn" type="button">Copy</button></div>
+                <pre><code class="language-http">Authorization: Bearer [REDACTED]
+Content-Type: application/json</code></pre>
+              </div>
+            </article>
+          </div>
+          <div class="code-block">
+            <div class="code-label"><span>curl with auth</span><button class="copy-btn" type="button">Copy</button></div>
+            <pre><code class="language-bash">curl -sS http://127.0.0.1:8000/ha/health \
+  -H "Content-Type: application/json"</code></pre>
+          </div>
+        </section>
+
+        <section id="endpoints" aria-labelledby="endpoints-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">03 · Interface contract</p>
+              <h2 id="endpoints-title">Endpoints Reference</h2>
+              <p>These docs show a clean device-control surface for API consumers. For Hermes automation in the current backend, <code>POST /commands</code> remains the canonical production path.</p>
+            </div>
+          </div>
+          <div class="callout"><strong>Implementation note:</strong> Some direct control routes below are developer-friendly aliases from the requested documentation prompt. If an alias is not implemented yet, route the same behavior through <code>POST /services/{domain}/{service}</code> or <code>POST /commands</code>.</div>
+
+          <article class="endpoint" id="get-devices">
+            <div class="endpoint-head"><div class="endpoint-title"><span class="method get">GET</span><span class="route">/devices</span></div><span>List all HA entities</span></div>
+            <div class="endpoint-body">
+              <p>Returns every Home Assistant entity known to the API.</p>
+              <div class="table-wrap"><table><thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td><code>domain</code></td><td>query string</td><td>No</td><td>Filter by domain, e.g. <code>light</code> or <code>switch</code>.</td></tr></tbody></table></div>
+              <div class="code-block"><div class="code-label"><span>response</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">[
+  {
+    "entity_id": "light.mock_bedroom_lamp",
+    "state": "off",
+    "attributes": {
+      "friendly_name": "Mock Bedroom Lamp",
+      "mock_device": true,
+      "room": "bedroom"
+    }
+  }
+]</code></pre></div>
+              <p><strong>Error codes:</strong> <code>401</code>, <code>503</code></p>
+            </div>
+          </article>
+
+          <article class="endpoint" id="get-device">
+            <div class="endpoint-head"><div class="endpoint-title"><span class="method get">GET</span><span class="route">/devices/{entity_id}</span></div><span>Get entity state</span></div>
+            <div class="endpoint-body">
+              <p>Reads one entity state from Home Assistant.</p>
+              <div class="table-wrap"><table><thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td><code>entity_id</code></td><td>path string</td><td>Yes</td><td>HA entity ID, e.g. <code>light.mock_bedroom_lamp</code>.</td></tr></tbody></table></div>
+              <div class="code-block"><div class="code-label"><span>response</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">{
+  "entity_id": "light.mock_bedroom_lamp",
+  "state": "on",
+  "attributes": {
+    "friendly_name": "Mock Bedroom Lamp",
+    "brightness": 180
+  }
+}</code></pre></div>
+              <p><strong>Error codes:</strong> <code>401</code>, <code>404</code>, <code>503</code></p>
+            </div>
+          </article>
+
+          <article class="endpoint" id="turn-on">
+            <div class="endpoint-head"><div class="endpoint-title"><span class="method post">POST</span><span class="route">/devices/{entity_id}/turn_on</span></div><span>Turn on a device</span></div>
+            <div class="endpoint-body">
+              <p>Turns on a light, switch, or compatible entity. Lights may accept brightness and color temperature.</p>
+              <div class="table-wrap"><table><thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td><code>entity_id</code></td><td>path string</td><td>Yes</td><td>Target entity.</td></tr><tr><td><code>brightness</code></td><td>integer</td><td>No</td><td>Light brightness from <code>0</code> to <code>255</code>.</td></tr><tr><td><code>color_temp</code></td><td>integer</td><td>No</td><td>Mired color temperature.</td></tr></tbody></table></div>
+              <div class="code-block"><div class="code-label"><span>request</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">{
+  "brightness": 180,
+  "color_temp": 320,
+  "require_verification": true
+}</code></pre></div>
+              <div class="code-block"><div class="code-label"><span>response</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">{
+  "status": "success",
+  "entity_id": "light.mock_bedroom_lamp",
+  "service": "turn_on",
+  "verification": {
+    "state_before": "off",
+    "state_after": "on",
+    "expected_state": "on",
+    "verified": true
+  }
+}</code></pre></div>
+              <p><strong>Error codes:</strong> <code>400</code>, <code>401</code>, <code>404</code>, <code>503</code></p>
+            </div>
+          </article>
+
+          <article class="endpoint" id="turn-off">
+            <div class="endpoint-head"><div class="endpoint-title"><span class="method post">POST</span><span class="route">/devices/{entity_id}/turn_off</span></div><span>Turn off a device</span></div>
+            <div class="endpoint-body">
+              <p>Turns off a light, switch, fan, or other compatible entity.</p>
+              <div class="table-wrap"><table><thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td><code>entity_id</code></td><td>path string</td><td>Yes</td><td>Target entity ID.</td></tr><tr><td><code>require_verification</code></td><td>boolean</td><td>No</td><td>Read state after command and compare to <code>off</code>.</td></tr></tbody></table></div>
+              <div class="code-block"><div class="code-label"><span>request</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">{
+  "require_verification": true
+}</code></pre></div>
+              <div class="code-block"><div class="code-label"><span>response</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">{
+  "status": "success",
+  "entity_id": "light.mock_bedroom_lamp",
+  "service": "turn_off",
+  "verification": {
+    "state_after": "off",
+    "verified": true
+  }
+}</code></pre></div>
+              <p><strong>Error codes:</strong> <code>400</code>, <code>401</code>, <code>404</code>, <code>503</code></p>
+            </div>
+          </article>
+
+          <article class="endpoint" id="toggle">
+            <div class="endpoint-head"><div class="endpoint-title"><span class="method post">POST</span><span class="route">/devices/{entity_id}/toggle</span></div><span>Toggle state</span></div>
+            <div class="endpoint-body">
+              <p>Toggles an on/off capable entity. Verification may infer the expected state from <code>state_before</code>.</p>
+              <div class="code-block"><div class="code-label"><span>request</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">{
+  "require_verification": true
+}</code></pre></div>
+              <div class="code-block"><div class="code-label"><span>response</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">{
+  "status": "success",
+  "entity_id": "switch.mock_kitchen_plug",
+  "service": "toggle",
+  "verification": {
+    "state_before": "off",
+    "state_after": "on",
+    "expected_state": "on",
+    "verified": true
+  }
+}</code></pre></div>
+              <p><strong>Error codes:</strong> <code>400</code>, <code>401</code>, <code>404</code>, <code>503</code></p>
+            </div>
+          </article>
+
+          <article class="endpoint" id="set-light">
+            <div class="endpoint-head"><div class="endpoint-title"><span class="method post">POST</span><span class="route">/lights/{entity_id}/set</span></div><span>Set light attributes</span></div>
+            <div class="endpoint-body">
+              <p>Sets light-specific attributes such as brightness, RGB color, and color temperature.</p>
+              <div class="table-wrap"><table><thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td><code>brightness</code></td><td>integer</td><td>No</td><td>Range <code>0–255</code>.</td></tr><tr><td><code>rgb_color</code></td><td>array&lt;int&gt;</td><td>No</td><td>Three RGB values, e.g. <code>[0, 212, 255]</code>.</td></tr><tr><td><code>color_temp</code></td><td>integer</td><td>No</td><td>Mired color temperature.</td></tr></tbody></table></div>
+              <div class="code-block"><div class="code-label"><span>request</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">{
+  "brightness": 220,
+  "rgb_color": [0, 212, 255],
+  "color_temp": 300,
+  "transition": 0.4
+}</code></pre></div>
+              <div class="code-block"><div class="code-label"><span>response</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">{
+  "status": "success",
+  "entity_id": "light.bedroom_ceiling",
+  "attributes": {
+    "brightness": 220,
+    "rgb_color": [0, 212, 255],
+    "color_temp": 300
+  }
+}</code></pre></div>
+              <p><strong>Error codes:</strong> <code>400</code>, <code>401</code>, <code>403</code>, <code>404</code>, <code>503</code></p>
+            </div>
+          </article>
+
+          <article class="endpoint" id="health">
+            <div class="endpoint-head"><div class="endpoint-title"><span class="method get">GET</span><span class="route">/health</span></div><span>API + HA connection health</span></div>
+            <div class="endpoint-body">
+              <p>Checks that the FastAPI service is alive and can reach Home Assistant.</p>
+              <div class="code-block"><div class="code-label"><span>response</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-json">{
+  "api": "ok",
+  "home_assistant": "ok",
+  "ha_url": "http://localhost:8123",
+  "latency_ms": 18
+}</code></pre></div>
+              <p><strong>Error codes:</strong> <code>401</code>, <code>503</code></p>
+            </div>
+          </article>
+        </section>
+
+        <section id="entity-types" aria-labelledby="entity-types-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">04 · Domain support</p>
+              <h2 id="entity-types-title">Supported Entity Types</h2>
+              <p>Entity support maps to Home Assistant domains. Verification is strongest for binary on/off states and should be explicit for richer domains like climate or cover.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Domain</th><th>Supported actions</th><th>Notes</th></tr></thead>
+              <tbody>
+                <tr><td><code>light</code></td><td><code>turn_on</code>, <code>turn_off</code>, <code>toggle</code>, <code>set</code></td><td>Supports brightness, RGB color, and color temperature when hardware supports it.</td></tr>
+                <tr><td><code>switch</code></td><td><code>turn_on</code>, <code>turn_off</code>, <code>toggle</code></td><td>Clean on/off verification.</td></tr>
+                <tr><td><code>cover</code></td><td><code>open_cover</code>, <code>close_cover</code>, <code>stop_cover</code></td><td>May need explicit expected state or position checks.</td></tr>
+                <tr><td><code>climate</code></td><td><code>set_temperature</code>, <code>set_hvac_mode</code></td><td>Verification should check attributes like target temperature or HVAC mode.</td></tr>
+                <tr><td><code>sensor</code></td><td><code>read</code></td><td>Usually read-only; do not send service calls unless using custom integrations.</td></tr>
+                <tr><td><code>input_boolean</code></td><td><code>turn_on</code>, <code>turn_off</code>, <code>toggle</code></td><td>Useful for virtual automations and safety gates.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="errors" aria-labelledby="errors-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">05 · Failure modes</p>
+              <h2 id="errors-title">Error Reference</h2>
+              <p>Most failures come from invalid payloads, missing auth, wrong entity IDs, Home Assistant being offline, or token/URL mismatch during PC ↔ Orin cutover.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Status</th><th>Cause</th><th>Resolution</th></tr></thead>
+              <tbody>
+                <tr><td><code>400</code></td><td>Invalid JSON, unsupported action, out-of-range brightness.</td><td>Validate request body and action name. Brightness must be <code>0–255</code>.</td></tr>
+                <tr><td><code>401</code></td><td>Missing or invalid Home Assistant token.</td><td>Regenerate HA Long-Lived Access Token and update <code>HA_TOKEN</code>.</td></tr>
+                <tr><td><code>403</code></td><td>Token lacks permission or HA blocks the action.</td><td>Use an admin token or check Home Assistant user permissions.</td></tr>
+                <tr><td><code>404</code></td><td>Entity or route not found.</td><td>Check HA Developer Tools → States for the real <code>entity_id</code>.</td></tr>
+                <tr><td><code>503</code></td><td>Home Assistant unreachable, starting, or wrong <code>HA_URL</code>.</td><td>Check Docker/container status, LAN IP, port <code>8123</code>, and backend env vars.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="examples" aria-labelledby="examples-title">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">06 · Operator snippets</p>
+              <h2 id="examples-title">Code Examples</h2>
+              <p>Turn a light on with brightness from curl, Python, or JavaScript. Replace the entity ID with your real HA entity when hardware is paired.</p>
+            </div>
+          </div>
+          <div class="tabs" data-tabs>
+            <div class="tab-list" role="tablist" aria-label="Code examples">
+              <button class="tab-button" id="tab-curl" role="tab" aria-controls="panel-curl" aria-selected="true">curl</button>
+              <button class="tab-button" id="tab-python" role="tab" aria-controls="panel-python" aria-selected="false">Python · httpx</button>
+              <button class="tab-button" id="tab-js" role="tab" aria-controls="panel-js" aria-selected="false">JavaScript · fetch</button>
+            </div>
+            <div id="panel-curl" class="tab-panel active" role="tabpanel" aria-labelledby="tab-curl">
+              <div class="code-block"><div class="code-label"><span>curl</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-bash">curl -X POST http://127.0.0.1:8000/devices/light.mock_bedroom_lamp/turn_on \
+  -H "Content-Type: application/json" \
+  -d '{"brightness":180,"require_verification":true}'</code></pre></div>
+            </div>
+            <div id="panel-python" class="tab-panel" role="tabpanel" aria-labelledby="tab-python">
+              <div class="code-block"><div class="code-label"><span>python</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-python">import httpx
+
+payload = {"brightness": 180, "require_verification": True}
+response = httpx.post(
+    "http://127.0.0.1:8000/devices/light.mock_bedroom_lamp/turn_on",
+    json=payload,
+    timeout=10,
+)
+response.raise_for_status()
+print(response.json())</code></pre></div>
+            </div>
+            <div id="panel-js" class="tab-panel" role="tabpanel" aria-labelledby="tab-js">
+              <div class="code-block"><div class="code-label"><span>javascript</span><button class="copy-btn" type="button">Copy</button></div><pre><code class="language-javascript">const response = await fetch("http://127.0.0.1:8000/devices/light.mock_bedroom_lamp/turn_on", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ brightness: 180, require_verification: true })
+});
+
+if (!response.ok) throw new Error(`API failed: ${response.status}`);
+console.log(await response.json());</code></pre></div>
+            </div>
+          </div>
+        </section>
+
+        <footer id="footer" class="footer">
+          <div class="grid two">
+            <div>
+              <h2>Built for local control.</h2>
+              <p>License: MIT. Links: <a href="../backend/README.md">Backend README</a> · <a href="HA_BACKEND_API.md">Markdown API docs</a> · <a href="PROJECT_DOC.md">Project overview</a>.</p>
+            </div>
+            <div class="pill-row" aria-label="Built with badges">
+              <span class="built-with">FastAPI</span>
+              <span class="built-with">Home Assistant</span>
+              <span class="built-with">Docker</span>
+              <span class="built-with">Python 3.11+</span>
+              <span class="built-with">Hermes Agent</span>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const escapeHtml = (value) => value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      const simpleHighlight = (code, language) => {
+        let html = escapeHtml(code);
+        if (['json', 'yaml', 'http'].includes(language)) {
+          html = html
+            .replace(/("[^"]*?")(\s*:)/g, '<span class="syntax-key">$1</span>$2')
+            .replace(/(:\s*)(".*?")/g, '$1<span class="syntax-string">$2</span>')
+            .replace(/(true|false|null)/g, '<span class="syntax-bool">$1</span>')
+            .replace(/(\d+(?:\.\d+)?)/g, '<span class="syntax-number">$1</span>')
+            .replace(/(^|\n)(\s*#.*)/g, '$1<span class="syntax-comment">$2</span>');
+        } else if (['bash', 'powershell'].includes(language)) {
+          html = html
+            .replace(/(^|\n)(\s*#.*)/g, '$1<span class="syntax-comment">$2</span>')
+            .replace(/(curl|cd|cp|docker|uvicorn|python3?|pip|export)/g, '<span class="syntax-command">$1</span>');
+        } else if (['python', 'javascript'].includes(language)) {
+          html = html
+            .replace(/(".*?"|'.*?'|`.*?`)/g, '<span class="syntax-string">$1</span>')
+            .replace(/(const|let|await|async|if|throw|new|import|from|print|True|False)/g, '<span class="syntax-key">$1</span>')
+            .replace(/(\d+(?:\.\d+)?)/g, '<span class="syntax-number">$1</span>');
+        }
+        return html;
+      };
+
+      document.querySelectorAll('pre code').forEach(code => {
+        const language = [...code.classList].find(name => name.startsWith('language-'))?.replace('language-', '') || '';
+        code.innerHTML = simpleHighlight(code.textContent, language);
+        code.classList.add('hljs');
+      });
+
+      const body = document.body;
+      const hamburger = document.querySelector('.hamburger');
+      const navLinks = [...document.querySelectorAll('.nav-link')];
+      const sections = navLinks
+        .map(link => document.querySelector(link.getAttribute('href')))
+        .filter(Boolean);
+
+      hamburger?.addEventListener('click', () => {
+        const open = body.classList.toggle('nav-open');
+        hamburger.setAttribute('aria-expanded', String(open));
+        hamburger.textContent = open ? '×' : '☰';
+      });
+
+      navLinks.forEach(link => link.addEventListener('click', () => {
+        body.classList.remove('nav-open');
+        if (hamburger) {
+          hamburger.setAttribute('aria-expanded', 'false');
+          hamburger.textContent = '☰';
+        }
+      }));
+
+      const observer = new IntersectionObserver(entries => {
+        const visible = entries
+          .filter(entry => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        navLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === `#${visible.target.id}`);
+        });
+      }, { rootMargin: '-20% 0px -66% 0px', threshold: [0.05, 0.15, 0.3, 0.6] });
+      sections.forEach(section => observer.observe(section));
+
+      document.querySelectorAll('.copy-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+          const code = button.closest('.code-block')?.querySelector('code')?.innerText ?? '';
+          try {
+            await navigator.clipboard.writeText(code);
+            const old = button.textContent;
+            button.textContent = 'Copied';
+            setTimeout(() => { button.textContent = old; }, 1300);
+          } catch {
+            button.textContent = 'Select text';
+            setTimeout(() => { button.textContent = 'Copy'; }, 1300);
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-tabs]').forEach(tabs => {
+        const buttons = [...tabs.querySelectorAll('[role="tab"]')];
+        const panels = [...tabs.querySelectorAll('[role="tabpanel"]')];
+        buttons.forEach(button => {
+          button.addEventListener('click', () => {
+            buttons.forEach(b => b.setAttribute('aria-selected', String(b === button)));
+            panels.forEach(panel => panel.classList.toggle('active', panel.id === button.getAttribute('aria-controls')));
+          });
+        });
+      });
+    });
+  </script>
+</body>
+</html>

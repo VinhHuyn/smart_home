@@ -42,10 +42,13 @@ class HomeAssistantSettings:
 
     @classmethod
     def from_env(cls) -> "HomeAssistantSettings":
-        url = os.getenv("HASS_URL", "http://localhost:8123").rstrip("/")
-        token = os.getenv("HASS_TOKEN", "")
-        timeout_sec = float(os.getenv("HASS_TIMEOUT_SEC", "10"))
-        return cls(url=url, token=token, timeout_sec=timeout_sec)
+        # Prefer HA_* for this backend. HASS_* remains a backwards-compatible
+        # fallback for older Orin cutover configs, but commented-out HASS_* keys
+        # should not override the active HA_* target/token pair.
+        url = os.getenv("HA_URL") or os.getenv("HASS_URL", "http://localhost:8123")
+        token = os.getenv("HA_TOKEN") or os.getenv("HASS_TOKEN", "")
+        timeout_sec = float(os.getenv("HA_TIMEOUT_SEC") or os.getenv("HASS_TIMEOUT_SEC", "10"))
+        return cls(url=url.rstrip("/"), token=token, timeout_sec=timeout_sec)
 
 
 class HomeAssistantClient:

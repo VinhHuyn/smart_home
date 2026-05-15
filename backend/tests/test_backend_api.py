@@ -30,6 +30,45 @@ class BackendApiTests(unittest.TestCase):
         self.assertEqual(payload["service"], "smart-home-ha-backend")
         self.assertIn("/commands", payload["capabilities"])
 
+    def test_home_assistant_settings_prefer_ha_env_names(self):
+        from ha_client import HomeAssistantSettings
+
+        with patch.dict(
+            "os.environ",
+            {
+                "HA_URL": "http://orin-ha:8123",
+                "HA_TOKEN": "new-token",
+                "HA_TIMEOUT_SEC": "7",
+                "HASS_URL": "http://old-ha:8123",
+                "HASS_TOKEN": "old-token",
+                "HASS_TIMEOUT_SEC": "3",
+            },
+            clear=False,
+        ):
+            settings = HomeAssistantSettings.from_env()
+
+        self.assertEqual(settings.url, "http://orin-ha:8123")
+        self.assertEqual(settings.token, "new-token")
+        self.assertEqual(settings.timeout_sec, 7.0)
+
+    def test_home_assistant_settings_fall_back_to_hass_env_names(self):
+        from ha_client import HomeAssistantSettings
+
+        with patch.dict(
+            "os.environ",
+            {
+                "HASS_URL": "http://fallback-ha:8123",
+                "HASS_TOKEN": "fallback-token",
+                "HASS_TIMEOUT_SEC": "5",
+            },
+            clear=True,
+        ):
+            settings = HomeAssistantSettings.from_env()
+
+        self.assertEqual(settings.url, "http://fallback-ha:8123")
+        self.assertEqual(settings.token, "fallback-token")
+        self.assertEqual(settings.timeout_sec, 5.0)
+
     def test_default_mock_devices_include_multiple_rooms(self):
         room_names = {device.room for device in DEFAULT_MOCK_DEVICES}
         entity_ids = {device.entity_id for device in DEFAULT_MOCK_DEVICES}
@@ -41,7 +80,7 @@ class BackendApiTests(unittest.TestCase):
         self.assertIn("light.mock_living_room_lamp", entity_ids)
         self.assertIn("switch.mock_kitchen_plug", entity_ids)
 
-    @patch("services.command_service.ha_client")
+    @patch("services.action_service.ha_client")
     def test_command_request_turns_off_real_device_and_verifies(self, mock_ha):
         mock_ha.call_service.return_value = {"changed_states": []}
         mock_ha.get_state.side_effect = [
@@ -71,7 +110,7 @@ class BackendApiTests(unittest.TestCase):
         self.assertTrue(payload["verification"]["verified"])
         mock_ha.call_service.assert_called_once()
 
-    @patch("services.command_service.ha_client")
+    @patch("services.action_service.ha_client")
     def test_command_request_turns_off_mock_device_via_state_api(self, mock_ha):
         mock_ha.get_state.return_value = {
             "entity_id": "light.mock_bedroom_lamp",
@@ -106,6 +145,31 @@ class BackendApiTests(unittest.TestCase):
         mock_ha.set_state.assert_called_once()
         mock_ha.call_service.assert_not_called()
 
+    @patch("services.action_service.ha_client")
+    def test_services_endpoint_reuses_canonical_mock_power_path(self, mock_ha):
+        mock_ha.get_state.return_value = {
+            "entity_id": "light.mock_bedroom_lamp",
+            "state": "on",
+            "attributes": {"mock_device": True},
+        }
+        mock_ha.set_state.return_value = {
+            "entity_id": "light.mock_bedroom_lamp",
+            "state": "off",
+            "attributes": {"mock_device": True},
+        }
+
+        response = self.client.post(
+            "/services/light/turn_off",
+            json={"entity_id": "light.mock_bedroom_lamp", "require_verification": True},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "success")
+        self.assertTrue(payload["verification"]["verified"])
+        mock_ha.set_state.assert_called_once()
+        mock_ha.call_service.assert_not_called()
+
     @patch("services.mock_device_service.ha_client")
     def test_mock_rooms_endpoint_groups_default_devices_by_room(self, mock_ha):
         response = self.client.get("/mock/rooms")
@@ -118,8 +182,13 @@ class BackendApiTests(unittest.TestCase):
         self.assertEqual(payload["bedroom"][0]["entity_id"], "light.mock_bedroom_lamp")
         mock_ha.get_states.assert_not_called()
 
-    @patch("services.mock_device_service.ha_client")
+    @patch("services.action_service.ha_client")
     def test_mock_turn_on_uses_state_api_for_virtual_device(self, mock_ha):
+        mock_ha.get_state.return_value = {
+            "entity_id": "light.mock_bedroom_lamp",
+            "state": "off",
+            "attributes": {"mock_device": True},
+        }
         mock_ha.set_state.return_value = {
             "entity_id": "light.mock_bedroom_lamp",
             "state": "on",
@@ -133,6 +202,58 @@ class BackendApiTests(unittest.TestCase):
         self.assertEqual(payload["entity_id"], "light.mock_bedroom_lamp")
         self.assertEqual(payload["state"], "on")
         mock_ha.set_state.assert_called_once()
+
+    @patch("services.action_service.ha_client")
+    def test_mock_toggle_computes_expected_state_and_verifies(self, mock_ha):
+        mock_ha.get_state.return_value = {
+            "entity_id": "light.mock_bedroom_lamp",
+            "state": "on",
+            "attributes": {"mock_device": True},
+        }
+        mock_ha.set_state.return_value = {
+            "entity_id": "light.mock_bedroom_lamp",
+            "state": "off",
+            "attributes": {"mock_device": True},
+        }
+
+        response = self.client.post(
+            "/services/light/toggle",
+            json={"entity_id": "light.mock_bedroom_lamp", "require_verification": True},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["verification"]["expected_state"], "off")
+        self.assertTrue(payload["verification"]["verified"])
+
+    @patch("services.action_service.ha_client")
+    def test_mock_endpoint_rejects_non_mock_entities(self, mock_ha):
+        mock_ha.get_state.return_value = {
+            "entity_id": "light.real_bedroom_lamp",
+            "state": "off",
+            "attributes": {},
+        }
+
+        response = self.client.post("/mock/devices/light.real_bedroom_lamp/turn_on")
+
+        self.assertEqual(response.status_code, 404)
+        mock_ha.set_state.assert_not_called()
+        mock_ha.call_service.assert_not_called()
+
+    @patch("services.action_service.ha_client")
+    def test_unverifiable_service_call_reports_verification_not_performed(self, mock_ha):
+        mock_ha.call_service.return_value = {"changed_states": []}
+
+        response = self.client.post(
+            "/services/homeassistant/restart",
+            json={"require_verification": True},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "success")
+        self.assertFalse(payload["verification"]["performed"])
+        self.assertIsNone(payload["verification"]["verified"])
 
     @patch("services.mock_device_service.ha_client")
     def test_register_mock_device_creates_state_in_home_assistant(self, mock_ha):

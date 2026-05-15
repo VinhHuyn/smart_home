@@ -1,6 +1,6 @@
 # Project Tree
 
-_Last updated: 2026-05-14 14:48_
+_Last updated: 2026-05-15 03:25_
 
 ```text
 .
@@ -21,6 +21,7 @@ _Last updated: 2026-05-14 14:48_
 │   │   └── ha.py
 │   ├── services/
 │   │   ├── __init__.py
+│   │   ├── action_service.py
 │   │   ├── command_service.py
 │   │   ├── default_devices.py
 │   │   ├── ha_service.py
@@ -34,31 +35,6 @@ _Last updated: 2026-05-14 14:48_
 │   ├── README.md
 │   └── requirements.txt
 ├── config/
-│   ├── .cloud/
-│   ├── .storage/
-│   │   ├── assist_pipeline.pipelines
-│   │   ├── auth
-│   │   ├── auth_provider.homeassistant
-│   │   ├── bluetooth.passive_update_processor
-│   │   ├── core.analytics
-│   │   ├── core.area_registry
-│   │   ├── core.config
-│   │   ├── core.config_entries
-│   │   ├── core.device_registry
-│   │   ├── core.entity_registry
-│   │   ├── core.restore_state
-│   │   ├── core.uuid
-│   │   ├── frontend.system_data
-│   │   ├── frontend.user_data_71d1ed7bd36743059ab5c39dc805bf0f
-│   │   ├── homeassistant.exposed_entities
-│   │   ├── http
-│   │   ├── http.auth
-│   │   ├── lovelace.map
-│   │   ├── lovelace_dashboards
-│   │   ├── onboarding
-│   │   ├── person
-│   │   ├── repairs.issue_registry
-│   │   └── trace.saved_traces
 │   ├── blueprints/
 │   │   ├── automation/
 │   │   │   └── homeassistant/
@@ -69,13 +45,9 @@ _Last updated: 2026-05-14 14:48_
 │   │           └── confirmable_notification.yaml
 │   ├── deps/
 │   ├── tts/
-│   ├── .ha_run.lock
 │   ├── .HA_VERSION
 │   ├── automations.yaml
 │   ├── configuration.yaml
-│   ├── home-assistant_v2.db
-│   ├── home-assistant_v2.db-shm
-│   ├── home-assistant_v2.db-wal
 │   ├── scenes.yaml
 │   └── scripts.yaml
 ├── docs/
@@ -92,7 +64,10 @@ _Last updated: 2026-05-14 14:48_
 │   ├── BACKEND_CODE_GUIDE.md
 │   ├── CHANGELOG.md
 │   ├── HA_BACKEND_API.md
-│   └── PROJECT_TREE.md
+│   ├── PROJECT_DOC.md
+│   ├── PROJECT_TREE.md
+│   └── SMART_HOME_API_DOCS.html
+├── .gitignore
 ├── AGENT.md
 └── docker-compose.yml
 ```
