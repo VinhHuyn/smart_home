@@ -1,9 +1,6 @@
 from __future__ import annotations
-
 from typing import Any
-
 from fastapi import APIRouter, HTTPException
-
 import ha_client
 from core.errors import ha_error_response
 from ha_client import HomeAssistantError
@@ -15,6 +12,7 @@ router = APIRouter(prefix="/services", tags=["services"])
 
 @router.get("")
 def services() -> list[dict[str, Any]]:
+    """Return all HA service domains."""
     try:
         return ha_client.get_services()
     except HomeAssistantError as exc:
@@ -23,6 +21,7 @@ def services() -> list[dict[str, Any]]:
 
 @router.get("/{domain}")
 def services_by_domain(domain: str) -> dict[str, Any]:
+    """Return one HA service domain definition."""
     try:
         for item in ha_client.get_services():
             if item.get("domain") == domain:
@@ -33,7 +32,12 @@ def services_by_domain(domain: str) -> dict[str, Any]:
 
 
 @router.post("/{domain}/{service}")
-def call_service(domain: str, service: str, request: ServiceCallRequest) -> dict[str, Any]:
+def call_service(
+    domain: str,
+    service: str,
+    request: ServiceCallRequest,
+) -> dict[str, Any]:
+    """Call one HA service through the backend action path."""
     try:
         return call_ha_service(domain, service, request)
     except HomeAssistantError as exc:

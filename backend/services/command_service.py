@@ -1,18 +1,29 @@
 from __future__ import annotations
-
 from typing import Any
-
 from core.time import utc_now
 from ha_client import HomeAssistantError
-from schemas.ha import CommandRequest
-from services.action_service import ActionRequest, build_service_data, execute_ha_action
+from schemas.ha import CommandIntent, CommandRequest
+from services.action_service import (
+    ActionRequest,
+    build_service_data,
+    execute_ha_action,
+)
 
 
-def command_service_data(intent) -> dict[str, Any]:
-    return build_service_data(entity_id=intent.entity_id, area_id=intent.area_id, service_data=intent.service_data)
+def command_service_data(intent: CommandIntent) -> dict[str, Any]:
+    """Build HA service payload from a command intent."""
+    return build_service_data(
+        entity_id=intent.entity_id,
+        area_id=intent.area_id,
+        service_data=intent.service_data,
+    )
 
 
-def _failed_command_response(request: CommandRequest, exc: HomeAssistantError) -> dict[str, Any]:
+def _failed_command_response(
+    request: CommandRequest,
+    exc: HomeAssistantError,
+) -> dict[str, Any]:
+    """Format HA transport failures as command result payloads."""
     return {
         "schema_version": request.schema_version,
         "message_type": "ha.command.result",
@@ -31,6 +42,7 @@ def _failed_command_response(request: CommandRequest, exc: HomeAssistantError) -
 
 
 def execute_command(request: CommandRequest) -> dict[str, Any]:
+    """Execute a command request through the shared HA action path."""
     service_data = command_service_data(request.intent)
     action_request = ActionRequest(
         domain=request.intent.domain,
