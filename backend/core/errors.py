@@ -6,7 +6,12 @@ from ha_client import HomeAssistantError
 
 
 def ha_error_response(exc: HomeAssistantError) -> HTTPException:
+    """Map a Home Assistant client error to a FastAPI HTTP error."""
     return HTTPException(
         status_code=exc.status_code or status.HTTP_502_BAD_GATEWAY,
-        detail={"message": str(exc), "ha_status_code": exc.status_code, "ha_payload": exc.payload},
+        detail={
+            "message": str(exc),
+            "ha_status_code": exc.status_code,
+            "ha_payload": exc.payload,
+        },
     )
