@@ -41,6 +41,36 @@ class BackendApiTests(unittest.TestCase):
         self.assertEqual(payload["service"], "smart-home-ha-backend")
         self.assertIn("/commands", payload["capabilities"])
 
+    def test_startup_seed_failure_is_logged_without_crashing(self):
+        import main
+
+        with patch.object(main, "seed_default_mock_devices", side_effect=RuntimeError("ha down")):
+            with patch.object(main.logger, "exception") as mock_exception:
+                main.seed_mock_devices_on_startup()
+
+        mock_exception.assert_called_once_with("Failed to seed default mock devices")
+
+    def test_json_log_formatter_escapes_message_content(self):
+        import json
+        import logging
+
+        from core.logging import JsonFormatter
+
+        record = logging.LogRecord(
+            name="test.logger",
+            level=logging.INFO,
+            pathname=__file__,
+            lineno=1,
+            msg='quoted "message"',
+            args=(),
+            exc_info=None,
+        )
+
+        payload = json.loads(JsonFormatter().format(record))
+        self.assertEqual(payload["level"], "INFO")
+        self.assertEqual(payload["logger"], "test.logger")
+        self.assertEqual(payload["message"], 'quoted "message"')
+
     def test_protected_endpoints_require_api_key(self):
         app.dependency_overrides.clear()
         unauth_client = TestClient(app)
