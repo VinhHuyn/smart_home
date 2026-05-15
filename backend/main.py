@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import Depends, FastAPI
 
 from core.auth import require_api_key
+from core.logging import configure_logging
 from routers import commands, devices, health, mock_devices, services
 from services.mock_device_service import seed_default_mock_devices
+
+configure_logging()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Smart Home Home Assistant Backend",
@@ -28,4 +34,4 @@ def seed_mock_devices_on_startup() -> None:
     try:
         seed_default_mock_devices()
     except Exception:
-        pass
+        logger.exception("Failed to seed default mock devices")

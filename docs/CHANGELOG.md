@@ -1,3 +1,12 @@
+## 2026-05-15 - Startup Observability Hardening
+
+### Added
+- Added structured JSON stdout logging for backend runtime logs.
+- Added regression coverage for startup mock-device seed failures so they are logged instead of silently swallowed.
+
+### Changed
+- `backend/main.py` now logs mock-device seed startup failures with exception context while still allowing FastAPI startup to continue when Home Assistant is unavailable.
+
 ## 2026-05-15 08:30 ADT - Security + Container Hygiene Follow-up
 
 ### Changed
