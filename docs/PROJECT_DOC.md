@@ -1,6 +1,6 @@
 # Smart Home Project Overview
 
-_Last updated: 2026-05-15 08:30 ADT_
+_Last updated: 2026-05-15 16:54 ADT_
 
 ## Purpose
 
@@ -19,6 +19,7 @@ _Last updated: 2026-05-15 08:30 ADT_
 - `docs/HA_BACKEND_API.md` — endpoint and environment reference.
 - `docs/BACKEND_CODE_GUIDE.md` — file-by-file backend explanation.
 - `docs/SMART_HOME_API_DOCS.html` — standalone dark-themed HTML developer docs artifact.
+- `docs/PROJECT_HEALTH_CHECK.md` — current health-check feedback, remediation PRs, and prioritized action list.
 
 ## Canonical control path
 
@@ -42,7 +43,13 @@ Secondary paths remain available for debugging and compatibility:
 
 - Protected control endpoints (`/devices`, `/services`, `/commands`, `/mock/*`) require `X-API-Key` matching `SMART_HOME_API_KEY`.
 - Diagnostic endpoints remain open: `GET /` and `GET /ha/health`.
-- A root `.dockerignore` is now required to keep secrets/runtime files (`.env*`, `config/`, `homeassistant/`, virtualenvs, logs) out of Docker build context.
+- Docker ignore files are required at each build context boundary: root `.dockerignore` for repository-root builds and `backend/.dockerignore` for backend-subdirectory builds, so secrets/runtime files (`.env*`, `config/`, `homeassistant/`, virtualenvs, logs) are not sent into Docker build context.
+
+## Health-check remediation status
+
+- PR #10 addresses the critical backend Docker build-context secret leakage finding by adding `backend/.dockerignore` and clarifying build-context ignore rules.
+- PR #11 addresses the critical observability finding by adding structured JSON stdout logging and logging startup mock-device seed failures with exception context.
+- Remaining high-priority follow-up: separate ARM64 Docker compatibility/deploy PR with pinned images, `platform: linux/arm64`, backend Dockerfile, Compose healthchecks, and rollback documentation.
 
 ## Environment convention
 
@@ -71,6 +78,7 @@ Do not commit `.env`, Home Assistant auth storage, tokens, or raw private state 
 - Added a self-contained HTML API documentation page with sticky navigation, syntax-highlighted code blocks, endpoint reference, and copy buttons.
 - Enforced API key protection on control endpoints via `SMART_HOME_API_KEY` + `X-API-Key`.
 - Added root `.dockerignore` to prevent secret/runtime leakage into Docker build context.
+- Added health-check docs to track PR #10/#11 remediation and remaining ARM64/deploy follow-up.
 
 ## Validation
 

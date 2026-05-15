@@ -1,3 +1,17 @@
+## 2026-05-15 16:54 ADT - Health Check Feedback + PR Docs
+
+### Added
+- Added `docs/PROJECT_HEALTH_CHECK.md` with section-by-section status, risks, concrete next steps, and prioritized remediation items.
+- Added docs references for PR #10 (`backend/.dockerignore` / Docker build-context secret hygiene) and PR #11 (structured startup logging).
+
+### Changed
+- Updated `README.md`, `docs/PROJECT_DOC.md`, `docs/HA_BACKEND_API.md`, and `docs/BACKEND_CODE_GUIDE.md` to reflect health-check feedback and current remediation PRs.
+- Clarified that Docker ignore rules must exist inside each selected build context, not only at repository root.
+- Refreshed `docs/PROJECT_TREE.md` with sensitive Home Assistant runtime internals excluded.
+
+### Notes
+- Did not copy `.env`, HA tokens, SSH keys, or Home Assistant `.storage` auth contents into docs.
+
 ## 2026-05-15 08:30 ADT - Security + Container Hygiene Follow-up
 
 ### Changed

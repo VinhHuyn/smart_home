@@ -1,6 +1,6 @@
 # Backend Code Guide
 
-_Last updated: 2026-05-15 03:16 ADT_
+_Last updated: 2026-05-15 16:54 ADT_
 
 This guide explains what each backend file, class, function, and main flow does. It is meant for future maintenance, so the code can stay clean while this document carries the detailed explanation.
 
@@ -33,7 +33,7 @@ Layer rules:
 - `routers/` should only parse HTTP requests and return HTTP responses.
 - `services/` should contain business decisions and multi-step workflows.
 - `schemas/` should define request/response data shapes.
-- `core/` should hold small shared helpers.
+- `core/` should hold small shared helpers, including API auth, error mapping, time helpers, and structured logging once PR #11 lands.
 - `ha_client.py` should be the only layer that directly talks to Home Assistant REST endpoints.
 
 ## Execution ownership: Hermes vs API vs backend services
@@ -70,6 +70,15 @@ Backend services
 Home Assistant client
   performs raw REST calls to /api/states or /api/services
 ```
+
+## Health-check notes
+
+Current remediation tracking lives in `docs/PROJECT_HEALTH_CHECK.md`. Two critical findings are being handled as isolated PRs:
+
+- PR #10: add `backend/.dockerignore` for backend-subdirectory Docker build contexts.
+- PR #11: add structured JSON stdout logging and log startup seed failures instead of silently swallowing them.
+
+Keep future fixes isolated: one remediation topic per PR, with docs updated in the same branch when behavior changes.
 
 ## Request flow examples
 
