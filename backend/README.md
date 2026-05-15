@@ -43,6 +43,9 @@ Layer rule:
 
 ## Configure environment
 
+> If you containerize this backend, keep `.dockerignore` present at repo root so secrets (`.env`, `config/`) and local virtualenv files are not sent into Docker build context.
+
+
 Create/edit `.env`:
 
 ```env
