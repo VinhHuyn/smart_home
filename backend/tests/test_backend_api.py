@@ -3,13 +3,24 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
+from core.auth import require_api_key
 from main import app
 from services.default_devices import DEFAULT_MOCK_DEVICES
 
 
 class BackendApiTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import os
+
+        os.environ["SMART_HOME_API_KEY"] = "test-api-key"
+
     def setUp(self):
+        app.dependency_overrides[require_api_key] = lambda: None
         self.client = TestClient(app)
+
+    def tearDown(self):
+        app.dependency_overrides.clear()
 
     def test_main_import_stays_thin_and_routers_are_split(self):
         import inspect
@@ -29,6 +40,14 @@ class BackendApiTests(unittest.TestCase):
         payload = response.json()
         self.assertEqual(payload["service"], "smart-home-ha-backend")
         self.assertIn("/commands", payload["capabilities"])
+
+    def test_protected_endpoints_require_api_key(self):
+        app.dependency_overrides.clear()
+        unauth_client = TestClient(app)
+
+        response = unauth_client.get("/devices")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.json()["detail"], "Invalid API key")
 
     def test_home_assistant_settings_prefer_ha_env_names(self):
         from ha_client import HomeAssistantSettings

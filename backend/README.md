@@ -52,6 +52,7 @@ Create/edit `.env`:
 HA_URL=http://localhost:8123
 HA_TOKEN=YOUR_HOME_ASSISTANT_LONG_LIVED_ACCESS_TOKEN
 HA_TIMEOUT_SEC=10
+SMART_HOME_API_KEY=CHANGE_ME_STRONG_RANDOM_KEY
 
 # Backwards-compatible fallback only; keep commented out unless needed:
 # HASS_URL=http://localhost:8123
@@ -81,6 +82,18 @@ Open API docs:
 ```text
 http://127.0.0.1:8000/docs
 ```
+
+## API authentication
+
+All control/data endpoints (`/devices`, `/services`, `/commands`, `/mock/*`) require:
+
+```http
+X-API-Key: <SMART_HOME_API_KEY>
+```
+
+Public endpoints kept unauthenticated for diagnostics:
+- `GET /`
+- `GET /ha/health`
 
 ## Canonical control path
 

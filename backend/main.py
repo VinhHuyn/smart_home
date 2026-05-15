@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
+from core.auth import require_api_key
 from routers import commands, devices, health, mock_devices, services
 from services.mock_device_service import seed_default_mock_devices
 
@@ -15,10 +16,10 @@ app = FastAPI(
 )
 
 app.include_router(health.router)
-app.include_router(devices.router)
-app.include_router(services.router)
-app.include_router(commands.router)
-app.include_router(mock_devices.router)
+app.include_router(devices.router, dependencies=[Depends(require_api_key)])
+app.include_router(services.router, dependencies=[Depends(require_api_key)])
+app.include_router(commands.router, dependencies=[Depends(require_api_key)])
+app.include_router(mock_devices.router, dependencies=[Depends(require_api_key)])
 
 
 @app.on_event("startup")
