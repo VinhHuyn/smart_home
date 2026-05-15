@@ -11,3 +11,4 @@ Track concise outcomes of documentation cleanup and sync runs.
 
 ## Runs
 - 2026-05-14 12:41 ADT: Removed stale duplicate docs and raw snapshots; kept docs organized around `HA_BACKEND_API.md`, `CHANGELOG.md`, `PROJECT_TREE.md`, and concise wiki pages.
+- 2026-05-15 16:54 ADT: synced health-check feedback documentation and PR #10/#11 remediation notes.

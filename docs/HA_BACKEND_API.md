@@ -1,6 +1,6 @@
 # Home Assistant Backend API
 
-_Last updated: 2026-05-15T06:16:51Z_
+_Last updated: 2026-05-15T19:54:00Z_
 
 This document describes the modular FastAPI backend in `D:\smart_home\backend` that bridges Hermes / chat commands to the running Home Assistant container.
 
@@ -67,6 +67,16 @@ HA_TIMEOUT_SEC=10
 The backend prefers `HA_*`. If both `HA_*` and `HASS_*` are present, `HA_*` wins. Keep `HASS_*` commented out unless you intentionally need the fallback path.
 
 Do not commit `.env` or Home Assistant auth/storage files.
+
+## Authentication
+
+Control/data endpoints require the shared backend API key:
+
+```http
+X-API-Key: <SMART_HOME_API_KEY>
+```
+
+Protected endpoint groups: `/devices`, `/services`, `/commands`, and `/mock/*`. Public diagnostic endpoints: `GET /` and `GET /ha/health`.
 
 ## Run backend
 
@@ -157,6 +167,7 @@ Example real service call:
 ```bash
 curl -X POST http://127.0.0.1:8000/services/light/turn_off \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: $SMART_HOME_API_KEY" \
   -d '{"entity_id":"light.real_bedroom_lamp","require_verification":true}'
 ```
 
@@ -171,6 +182,7 @@ Example for bedroom light off:
 ```bash
 curl -X POST http://127.0.0.1:8000/commands \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: $SMART_HOME_API_KEY" \
   -d '{
     "schema_version":"ha-bridge.v1",
     "message_type":"ha.command.request",
@@ -306,3 +318,19 @@ cd /mnt/d/smart_home/backend
 ```
 
 Expected result: all tests pass.
+
+## Runtime logging
+
+PR #11 added structured JSON logs to stdout so Docker/container log collectors can parse backend runtime events. Startup mock-device seed failures are logged with exception context while startup continues if Home Assistant is unavailable.
+
+Check container logs:
+
+```bash
+docker logs smart-home-backend --tail 50
+```
+
+Expected error shape after a startup seed failure:
+
+```json
+{"level":"ERROR","logger":"main","message":"Failed to seed default mock devices","exception":"..."}
+```

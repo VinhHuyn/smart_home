@@ -2,6 +2,10 @@
 
 This repository hosts the Smart Home backend bridge for Home Assistant. The backend exposes Home Assistant health/config, device states, service calls, Hermes-style command messages, and expandable mock devices for local testing.
 
+## Health-check status
+
+See `docs/PROJECT_HEALTH_CHECK.md` for the current project health assessment, critical feedback items, and prioritized remediation plan. Current critical remediation PRs are PR #10 for backend Docker build-context secret hygiene and PR #11 for startup observability.
+
 ## Repo layout
 
 ```text
@@ -90,6 +94,14 @@ Open API docs:
 
 ```text
 http://127.0.0.1:8000/docs
+```
+
+## Structured logging and startup observability
+
+PR #11 added JSON-formatted stdout logs for container runtimes and logs startup mock-device seed failures with exception context instead of silently swallowing them. Startup still continues if Home Assistant is unavailable; the failure becomes visible in Docker logs.
+
+```bash
+docker logs smart-home-backend --tail 50
 ```
 
 ## API authentication

@@ -13,3 +13,8 @@
 
 ## [2026-05-10] create | wiki initialized
 - Wiki initialized.
+
+## 2026-05-15 16:54 ADT
+
+- Added health-check feedback docs and PR #10/#11 remediation references.
+- Refreshed project tree with sensitive HA runtime internals excluded.

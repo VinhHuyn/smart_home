@@ -1,13 +1,20 @@
 # Project Tree
 
-_Last updated: 2026-05-15 03:25_
+_Last updated: 2026-05-15 16:54 ADT_
 
 ```text
 .
+├── .github/
+│   ├── scripts/
+│   │   └── check_html_scripts.py
+│   └── workflows/
+│       └── ci.yml
 ├── backend/
 │   ├── core/
 │   │   ├── __init__.py
+│   │   ├── auth.py
 │   │   ├── errors.py
+│   │   ├── logging.py
 │   │   └── time.py
 │   ├── routers/
 │   │   ├── __init__.py
@@ -25,31 +32,15 @@ _Last updated: 2026-05-15 03:25_
 │   │   ├── command_service.py
 │   │   ├── default_devices.py
 │   │   ├── ha_service.py
+│   │   ├── mock_action_helpers.py
+│   │   ├── mock_catalog.py
 │   │   └── mock_device_service.py
 │   ├── tests/
 │   │   └── test_backend_api.py
-│   ├── .gitignore
+│   ├── .dockerignore
 │   ├── ha_client.py
 │   ├── main.py
-│   ├── project.code-workspace
-│   ├── README.md
 │   └── requirements.txt
-├── config/
-│   ├── blueprints/
-│   │   ├── automation/
-│   │   │   └── homeassistant/
-│   │   │       ├── motion_light.yaml
-│   │   │       └── notify_leaving_zone.yaml
-│   │   └── script/
-│   │       └── homeassistant/
-│   │           └── confirmable_notification.yaml
-│   ├── deps/
-│   ├── tts/
-│   ├── .HA_VERSION
-│   ├── automations.yaml
-│   ├── configuration.yaml
-│   ├── scenes.yaml
-│   └── scripts.yaml
 ├── docs/
 │   ├── wiki/
 │   │   ├── concepts/
@@ -65,9 +56,15 @@ _Last updated: 2026-05-15 03:25_
 │   ├── CHANGELOG.md
 │   ├── HA_BACKEND_API.md
 │   ├── PROJECT_DOC.md
+│   ├── PROJECT_HEALTH_CHECK.md
 │   ├── PROJECT_TREE.md
 │   └── SMART_HOME_API_DOCS.html
+├── .dockerignore
 ├── .gitignore
 ├── AGENT.md
-└── docker-compose.yml
+├── docker-compose.yml
+└── README.md
 ```
+
+Notes:
+- Home Assistant runtime/auth internals under `config/.storage/` are intentionally excluded from this tree.
