@@ -1,19 +1,20 @@
 from __future__ import annotations
-
 from dataclasses import dataclass, field
 from typing import Any
 
 import ha_client
 from core.time import utc_now
 from ha_client import HomeAssistantError
-
-POWER_SERVICES = {"turn_on", "turn_off", "toggle"}
-MOCK_POWER_DOMAINS = {"light", "switch"}
+from services.mock_action_helpers import (
+    is_mock_device,
+    is_mock_power_action,
+    mock_power_next_state,
+)
 
 
 @dataclass(frozen=True)
 class ActionRequest:
-    """Canonical HA action description shared by /commands, /services, and mock power routes."""
+    """Describe one HA action before transport-specific execution."""
 
     domain: str
     service: str
@@ -25,7 +26,11 @@ class ActionRequest:
     require_mock_device: bool = False
 
 
-def expected_state_for_service(service: str, explicit_expected_state: str | None = None) -> str | None:
+def expected_state_for_service(
+    service: str,
+    explicit_expected_state: str | None = None,
+) -> str | None:
+    """Infer the expected state for common power services."""
     if explicit_expected_state:
         return explicit_expected_state
     if service == "turn_on":
@@ -41,6 +46,7 @@ def build_service_data(
     area_id: str | None = None,
     service_data: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    """Merge entity, area, and caller-provided service payload fields."""
     payload = dict(service_data or {})
     if entity_id is not None:
         payload["entity_id"] = entity_id
@@ -50,51 +56,33 @@ def build_service_data(
 
 
 def _single_entity_id(entity_id: str | list[str] | None) -> str | None:
+    """Return the entity ID only when verification can target one entity."""
     return entity_id if isinstance(entity_id, str) else None
 
 
-def _is_mock_power_action(before: dict[str, Any] | None, request: ActionRequest) -> bool:
-    return bool(
-        before
-        and before.get("attributes", {}).get("mock_device") is True
-        and request.domain in MOCK_POWER_DOMAINS
-        and request.service in POWER_SERVICES
-        and _single_entity_id(request.entity_id) is not None
-    )
-
-
-def _is_mock_device(before: dict[str, Any] | None) -> bool:
-    return bool(before and before.get("attributes", {}).get("mock_device") is True)
-
-
-def _mock_power_next_state(service: str, before_state: str | None) -> str:
-    if service == "toggle":
-        return "off" if before_state == "on" else "on"
-    return "on" if service == "turn_on" else "off"
-
-
 def execute_ha_action(request: ActionRequest) -> dict[str, Any]:
-    """Execute one HA action through the canonical backend path.
-
-    This centralizes the duplicated behavior that used to live separately in
-    /commands, /services, and mock power endpoints: service_data construction,
-    mock-device state updates, before/after reads, and verification.
-    """
-
+    """Execute one HA action and return HA call plus verification metadata."""
     entity_id = _single_entity_id(request.entity_id)
-    service_data = build_service_data(entity_id=request.entity_id, service_data=request.service_data)
+    service_data = build_service_data(
+        entity_id=request.entity_id,
+        service_data=request.service_data,
+    )
     expected = expected_state_for_service(request.service, request.expected_state)
 
     if request.dry_run:
         return {
             "status": "dry_run",
-            "ha_call": {"domain": request.domain, "service": request.service, "service_data": service_data},
+            "ha_call": {
+                "domain": request.domain,
+                "service": request.service,
+                "service_data": service_data,
+            },
             "ha_response": None,
             "verification": {"performed": False, "verified": None},
         }
 
     before = ha_client.get_state(entity_id) if entity_id else None
-    if request.require_mock_device and not _is_mock_device(before):
+    if request.require_mock_device and not is_mock_device(before):
         raise HomeAssistantError(
             f"Mock device not found or not managed by this backend: {entity_id}",
             status_code=404,
@@ -102,10 +90,19 @@ def execute_ha_action(request: ActionRequest) -> dict[str, Any]:
         )
 
     if expected is None and request.service == "toggle" and before is not None:
-        expected = _mock_power_next_state(request.service, before.get("state"))
+        expected = mock_power_next_state(request.service, before.get("state"))
 
-    if _is_mock_power_action(before, request) and entity_id is not None and before is not None:
-        next_state = _mock_power_next_state(request.service, before.get("state"))
+    if (
+        is_mock_power_action(
+            before,
+            domain=request.domain,
+            service=request.service,
+            entity_id=request.entity_id,
+        )
+        and entity_id is not None
+        and before is not None
+    ):
+        next_state = mock_power_next_state(request.service, before.get("state"))
         ha_response = ha_client.set_state(
             entity_id,
             next_state,
@@ -117,10 +114,16 @@ def execute_ha_action(request: ActionRequest) -> dict[str, Any]:
         )
         after = ha_response
     else:
-        ha_response = ha_client.call_service(request.domain, request.service, service_data)
+        ha_response = ha_client.call_service(
+            request.domain,
+            request.service,
+            service_data,
+        )
         after = ha_client.get_state(entity_id) if entity_id else None
 
-    verification_performed = request.require_verification and expected is not None and after is not None
+    verification_performed = (
+        request.require_verification and expected is not None and after is not None
+    )
     verified: bool | None = None
     if verification_performed and after is not None:
         verified = after.get("state") == expected
