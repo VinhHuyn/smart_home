@@ -321,7 +321,7 @@ Expected result: all tests pass.
 
 ## Runtime logging
 
-PR #11 adds structured JSON logs to stdout so Docker/container log collectors can parse backend runtime events. Startup mock-device seed failures are logged with exception context while startup continues if Home Assistant is unavailable.
+PR #11 added structured JSON logs to stdout so Docker/container log collectors can parse backend runtime events. Startup mock-device seed failures are logged with exception context while startup continues if Home Assistant is unavailable.
 
 Check container logs:
 

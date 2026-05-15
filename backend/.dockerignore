@@ -1,0 +1,36 @@
+# Keep local secrets and developer artifacts out of backend Docker build contexts.
+.env
+.env.*
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Runtime logs and temp files
+*.log
+logs/
+*.pid
+*.tmp
+
+# Home Assistant/runtime config must be mounted, not baked into images
+config/
+homeassistant/
+
+# Tests and docs are not required in the runtime image
+tests/
+*.md
+docs/
+
+# Editor / OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -14,6 +14,7 @@ _Last updated: 2026-05-15 16:54 ADT_
 │   │   ├── __init__.py
 │   │   ├── auth.py
 │   │   ├── errors.py
+│   │   ├── logging.py
 │   │   └── time.py
 │   ├── routers/
 │   │   ├── __init__.py
@@ -36,6 +37,7 @@ _Last updated: 2026-05-15 16:54 ADT_
 │   │   └── mock_device_service.py
 │   ├── tests/
 │   │   └── test_backend_api.py
+│   ├── .dockerignore
 │   ├── ha_client.py
 │   ├── main.py
 │   └── requirements.txt

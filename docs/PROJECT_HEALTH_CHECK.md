@@ -2,10 +2,10 @@
 
 _Last updated: 2026-05-15 16:54 ADT_
 
-This health check reflects the repository state after the backend modularization, API-key hardening, root README cleanup, and the current critical remediation PRs:
+This health check reflects the repository state after the backend modularization, API-key hardening, root README cleanup, and the merged critical remediation PRs:
 
-- PR #10: `fix/docker-build-context-secrets` — adds `backend/.dockerignore` and documents Docker build-context boundaries.
-- PR #11: `fix/structured-startup-logging` — adds structured JSON stdout logging and logs startup mock-device seed failures.
+- PR #10: `fix/docker-build-context-secrets` — added `backend/.dockerignore` and documents Docker build-context boundaries.
+- PR #11: `fix/structured-startup-logging` — added structured JSON stdout logging and logs startup mock-device seed failures.
 
 Status legend: ✅ Good / ⚠️ Needs Attention / ❌ Critical.
 
@@ -28,15 +28,15 @@ Status legend: ✅ Good / ⚠️ Needs Attention / ❌ Critical.
 - Control/data routes are protected with `X-API-Key` via `SMART_HOME_API_KEY`.
 - Diagnostic routes intentionally remain open: `GET /` and `GET /ha/health`.
 - Root `.dockerignore` excludes `.env*`, Home Assistant runtime config, virtualenvs, logs, caches, and VCS noise from root Docker builds.
-- PR #10 adds `backend/.dockerignore` for backend-subdirectory builds.
+- PR #10 added `backend/.dockerignore` for backend-subdirectory builds.
 
 ### Missing or risky
-- Until PR #10 is merged, `context: ./backend` builds do not have a backend-local ignore file.
+- `context: ./backend` builds are protected by `backend/.dockerignore` after PR #10; keep that file present with any backend Dockerfile changes.
 - SSH hardening cannot be verified from repository files alone; verify it on the Orin host.
 - No role-based or user-level API authorization exists; the current control-plane protection is a shared API key.
 
 ### Exact next step
-Merge PR #10, then verify secrets are excluded from every Docker context:
+After PR #10, verify secrets are excluded from every Docker context:
 
 ```bash
 git checkout main && git pull
@@ -144,7 +144,7 @@ If SSH remains required, document it as deployment/ops access, not as the runtim
 
 ### What's good
 - `backend/tests/test_backend_api.py` exists and covers API key protection, HA env precedence, mock safety, command verification, and error shapes.
-- PR #11 adds regression coverage for startup seed failure logging and JSON log escaping.
+- PR #11 added regression coverage for startup seed failure logging and JSON log escaping.
 
 ### Missing or risky
 - There is no full integration test that runs backend + HA together in Docker Compose on ARM64.
@@ -185,17 +185,17 @@ docker compose down && docker compose up -d <previous-image-tag-or-previous-comp
 ## 8. Observability — ⚠️ Needs Attention
 
 ### What's good
-- PR #11 adds structured JSON stdout logs for container runtimes.
+- PR #11 added structured JSON stdout logs for container runtimes.
 - PR #11 changes startup seeding from silent failure to `logger.exception(...)` while allowing startup to continue if HA is unavailable.
 - Docker captures stdout/stderr logs by default.
 
 ### Missing or risky
-- Until PR #11 is merged, startup seed failures can be silent.
+- Before PR #11, startup seed failures were silent; keep the structured logging regression tests passing.
 - No alerting is configured for FastAPI or HA downtime.
 - Log persistence/rotation policy is not documented for the Orin deployment.
 
 ### Exact next step
-Merge PR #11, then verify logs include structured JSON after a startup failure:
+After PR #11, verify logs include structured JSON after a startup failure:
 
 ```bash
 docker logs smart-home-backend --tail 50

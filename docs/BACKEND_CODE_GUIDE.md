@@ -73,7 +73,7 @@ Home Assistant client
 
 ## Health-check notes
 
-Current remediation tracking lives in `docs/PROJECT_HEALTH_CHECK.md`. Two critical findings are being handled as isolated PRs:
+Current remediation tracking lives in `docs/PROJECT_HEALTH_CHECK.md`. Two critical findings are handled as isolated PRs:
 
 - PR #10: add `backend/.dockerignore` for backend-subdirectory Docker build contexts.
 - PR #11: add structured JSON stdout logging and log startup seed failures instead of silently swallowing them.

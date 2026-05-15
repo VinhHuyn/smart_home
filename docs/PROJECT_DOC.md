@@ -14,6 +14,7 @@ _Last updated: 2026-05-15 16:54 ADT_
 - `backend/services/command_service.py` — wraps canonical action execution in the Hermes `ha.command.request` / `ha.command.result` schema.
 - `backend/services/ha_service.py` — secondary direct service-call wrapper that reuses the canonical action executor.
 - `backend/services/mock_device_service.py` — mock-device creation/listing plus convenience power endpoints; mock power endpoints require `attributes.mock_device: true`.
+- `backend/core/logging.py` — structured JSON stdout logging for container/runtime observability.
 - `backend/routers/` — HTTP route modules.
 - `backend/tests/test_backend_api.py` — backend unit tests.
 - `docs/HA_BACKEND_API.md` — endpoint and environment reference.
@@ -39,16 +40,17 @@ Secondary paths remain available for debugging and compatibility:
 - `/devices/*` — raw state inspection/update helpers.
 - `/mock/*` — mock-device catalog and convenience controls.
 
-## API authentication and container hygiene
+## API authentication, container hygiene, and observability
 
 - Protected control endpoints (`/devices`, `/services`, `/commands`, `/mock/*`) require `X-API-Key` matching `SMART_HOME_API_KEY`.
 - Diagnostic endpoints remain open: `GET /` and `GET /ha/health`.
 - Docker ignore files are required at each build context boundary: root `.dockerignore` for repository-root builds and `backend/.dockerignore` for backend-subdirectory builds, so secrets/runtime files (`.env*`, `config/`, `homeassistant/`, virtualenvs, logs) are not sent into Docker build context.
+- Backend runtime logs are emitted as JSON to stdout; startup mock-device seed failures are logged with exception context instead of being silently swallowed.
 
 ## Health-check remediation status
 
-- PR #10 addresses the critical backend Docker build-context secret leakage finding by adding `backend/.dockerignore` and clarifying build-context ignore rules.
-- PR #11 addresses the critical observability finding by adding structured JSON stdout logging and logging startup mock-device seed failures with exception context.
+- PR #10 addressed the critical backend Docker build-context secret leakage finding by adding `backend/.dockerignore` and clarifying build-context ignore rules.
+- PR #11 addressed the critical observability finding by adding structured JSON stdout logging and logging startup mock-device seed failures with exception context.
 - Remaining high-priority follow-up: separate ARM64 Docker compatibility/deploy PR with pinned images, `platform: linux/arm64`, backend Dockerfile, Compose healthchecks, and rollback documentation.
 
 ## Environment convention
@@ -77,7 +79,8 @@ Do not commit `.env`, Home Assistant auth storage, tokens, or raw private state 
 - Clarified documentation for which execution layer belongs to Hermes, API endpoints, and backend services.
 - Added a self-contained HTML API documentation page with sticky navigation, syntax-highlighted code blocks, endpoint reference, and copy buttons.
 - Enforced API key protection on control endpoints via `SMART_HOME_API_KEY` + `X-API-Key`.
-- Added root `.dockerignore` to prevent secret/runtime leakage into Docker build context.
+- Added root and backend `.dockerignore` files to prevent secret/runtime leakage into Docker build contexts.
+- Added structured JSON startup/runtime logging for backend observability.
 - Added health-check docs to track PR #10/#11 remediation and remaining ARM64/deploy follow-up.
 
 ## Validation

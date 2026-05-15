@@ -2,22 +2,31 @@
 
 ### Added
 - Added `docs/PROJECT_HEALTH_CHECK.md` with section-by-section status, risks, concrete next steps, and prioritized remediation items.
-- Added docs references for PR #10 (`backend/.dockerignore` / Docker build-context secret hygiene) and PR #11 (structured startup logging).
+- Added docs references for merged PR #10 (`backend/.dockerignore` / Docker build-context secret hygiene) and merged PR #11 (structured startup logging).
 
 ### Changed
-- Updated `README.md`, `docs/PROJECT_DOC.md`, `docs/HA_BACKEND_API.md`, and `docs/BACKEND_CODE_GUIDE.md` to reflect health-check feedback and current remediation PRs.
+- Updated `README.md`, `docs/PROJECT_DOC.md`, `docs/HA_BACKEND_API.md`, and `docs/BACKEND_CODE_GUIDE.md` to reflect health-check feedback and merged remediation PRs.
 - Clarified that Docker ignore rules must exist inside each selected build context, not only at repository root.
 - Refreshed `docs/PROJECT_TREE.md` with sensitive Home Assistant runtime internals excluded.
 
 ### Notes
 - Did not copy `.env`, HA tokens, SSH keys, or Home Assistant `.storage` auth contents into docs.
 
+## 2026-05-15 - Startup Observability Hardening
+
+### Added
+- Added structured JSON stdout logging for backend runtime logs.
+- Added regression coverage for startup mock-device seed failures so they are logged instead of silently swallowed.
+
+### Changed
+- `backend/main.py` now logs mock-device seed startup failures with exception context while still allowing FastAPI startup to continue when Home Assistant is unavailable.
+
 ## 2026-05-15 08:30 ADT - Security + Container Hygiene Follow-up
 
 ### Changed
 - Documented API-key enforcement for control endpoints (`/devices`, `/services`, `/commands`, `/mock/*`) using `SMART_HOME_API_KEY` and `X-API-Key`.
 - Documented diagnostic endpoints that remain unauthenticated (`GET /`, `GET /ha/health`).
-- Documented root `.dockerignore` requirement for Docker builds to exclude `.env*`, `config/`, `homeassistant/`, virtualenvs, logs, and caches from build context.
+- Added root and backend-context Docker ignore guidance so `.env*`, `config/`, `homeassistant/`, virtualenvs, logs, and caches are excluded from the relevant Docker build context.
 - Updated `docs/PROJECT_DOC.md` environment example to include `SMART_HOME_API_KEY`.
 
 ### Notes

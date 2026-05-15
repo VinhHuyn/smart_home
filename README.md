@@ -98,7 +98,7 @@ http://127.0.0.1:8000/docs
 
 ## Structured logging and startup observability
 
-PR #11 adds JSON-formatted stdout logs for container runtimes and logs startup mock-device seed failures with exception context instead of silently swallowing them. Startup still continues if Home Assistant is unavailable; the failure becomes visible in Docker logs.
+PR #11 added JSON-formatted stdout logs for container runtimes and logs startup mock-device seed failures with exception context instead of silently swallowing them. Startup still continues if Home Assistant is unavailable; the failure becomes visible in Docker logs.
 
 ```bash
 docker logs smart-home-backend --tail 50
