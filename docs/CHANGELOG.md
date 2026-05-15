@@ -3,7 +3,7 @@
 ### Changed
 - Documented API-key enforcement for control endpoints (`/devices`, `/services`, `/commands`, `/mock/*`) using `SMART_HOME_API_KEY` and `X-API-Key`.
 - Documented diagnostic endpoints that remain unauthenticated (`GET /`, `GET /ha/health`).
-- Documented root `.dockerignore` requirement for Docker builds to exclude `.env*`, `config/`, `homeassistant/`, virtualenvs, logs, and caches from build context.
+- Added root and backend-context Docker ignore guidance so `.env*`, `config/`, `homeassistant/`, virtualenvs, logs, and caches are excluded from the relevant Docker build context.
 - Updated `docs/PROJECT_DOC.md` environment example to include `SMART_HOME_API_KEY`.
 
 ### Notes
