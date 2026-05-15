@@ -1,10 +1,19 @@
-# 🧠 Backend Run Guide (FastAPI + Home Assistant)
+# 🏠 Smart Home Project Guide (FastAPI + Home Assistant)
 
-This backend is the Smart Home API bridge for Home Assistant. It exposes Home Assistant health/config, device states, service calls, Hermes-style command messages, and expandable mock devices for local testing.
+This repository hosts the Smart Home backend bridge for Home Assistant. The backend exposes Home Assistant health/config, device states, service calls, Hermes-style command messages, and expandable mock devices for local testing.
 
-## Architecture layout
+## Repo layout
 
-The backend is intentionally split by layer. Do **not** dump future logic into `main.py`.
+```text
+D:\smart_home
+ ├── backend/      # FastAPI Home Assistant bridge
+ ├── docs/         # Project documentation and generated API docs
+ └── .github/      # CI workflows and repository automation
+```
+
+## Architecture layout (backend)
+
+Backend code lives in `backend/` and is intentionally split by layer. Do **not** dump future logic into `backend/main.py`.
 
 ```text
 D:\smart_home\backend
@@ -34,19 +43,19 @@ D:\smart_home\backend
 
 Layer rule:
 
-- `routers/` should only parse HTTP requests and return HTTP responses.
-- `services/` owns business logic and Home Assistant orchestration.
-- `schemas/` owns Pydantic models.
-- `core/` owns shared helpers.
-- `ha_client.py` owns raw HA REST calls only.
-- `main.py` should stay small: app setup + router includes + startup seed.
+- `backend/routers/` should only parse HTTP requests and return HTTP responses.
+- `backend/services/` owns business logic and Home Assistant orchestration.
+- `backend/schemas/` owns Pydantic models.
+- `backend/core/` owns shared helpers.
+- `backend/ha_client.py` owns raw HA REST calls only.
+- `backend/main.py` should stay small: app setup + router includes + startup seed.
 
 ## Configure environment
 
 > If you containerize this backend, keep `.dockerignore` present at repo root so secrets (`.env`, `config/`) and local virtualenv files are not sent into Docker build context.
 
 
-Create/edit `.env`:
+Create/edit `backend/.env`:
 
 ```env
 HA_URL=http://localhost:8123
@@ -105,7 +114,7 @@ The other endpoints are kept as compatibility/debug paths:
 - `/mock/devices/*`: mock-device convenience endpoints.
 - `/devices/*`: raw HA state inspection/update helpers.
 
-To avoid duplicated behavior, `/commands`, `/services/{domain}/{service}`, and mock power endpoints now share the same service helper in `services/action_service.py` for turn on/off/toggle, mock state updates, service payload construction, and verification.
+To avoid duplicated behavior, `/commands`, `/services/{domain}/{service}`, and mock power endpoints now share the same service helper in `backend/services/action_service.py` for turn on/off/toggle, mock state updates, service payload construction, and verification.
 
 ## Execution ownership
 
@@ -186,7 +195,7 @@ curl -X POST http://127.0.0.1:8000/commands \
 Edit:
 
 ```text
-services/default_devices.py
+backend/services/default_devices.py
 ```
 
 Add one `MockDeviceCreate(...)` entry:
@@ -202,7 +211,7 @@ MockDeviceCreate(
 )
 ```
 
-Then restart backend. The startup hook in `main.py` will seed it into HA.
+Then restart backend. The startup hook in `backend/main.py` will seed it into HA.
 
 ## Add/change real devices later
 
