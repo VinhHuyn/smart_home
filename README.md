@@ -5,7 +5,7 @@ This repository hosts the Smart Home backend bridge for Home Assistant. The back
 ## Repo layout
 
 ```text
-D:\smart_home
+<project-root>
  ├── backend/      # FastAPI Home Assistant bridge
  ├── docs/         # Project documentation and generated API docs
  └── .github/      # CI workflows and repository automation
@@ -16,7 +16,7 @@ D:\smart_home
 Backend code lives in `backend/` and is intentionally split by layer. Do **not** dump future logic into `backend/main.py`.
 
 ```text
-D:\smart_home\backend
+<project-root>\backend
  ├── main.py                         # app creation, router registration, startup hooks only
  ├── ha_client.py                    # low-level Home Assistant REST client
  ├── core\
@@ -74,7 +74,7 @@ SMART_HOME_API_KEY=CHANGE_ME_STRONG_RANDOM_KEY
 PowerShell:
 
 ```powershell
-cd D:\smart_home\backend
+cd <project-root>\backend
 .\.venv\Scripts\activate
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
@@ -82,7 +82,7 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 WSL:
 
 ```bash
-cd /mnt/d/smart_home/backend
+cd <project-root>/backend
 .venv/Scripts/python.exe -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -261,6 +261,6 @@ Example climate call:
 ## Run tests
 
 ```bash
-cd /mnt/d/smart_home/backend
+cd <project-root>/backend
 .venv/Scripts/python.exe -m unittest tests/test_backend_api.py -v
 ```

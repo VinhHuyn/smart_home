@@ -44,3 +44,6 @@ dist/
 
 # Node
 node_modules/
+
+# Local/private README copy (may include machine-specific paths)
+README.local.md
